@@ -17,7 +17,7 @@ Copy `.env.example` to `.env.local` and fill in:
 
 - `DEMO_REPOSITORY_URL` is optional. The app defaults to this repository's GitHub URL; set it when using a fork. Push the app changes before launching a preview, since the sandbox clones the remote branch.
 - `OPENCODE_MODEL`: an OpenCode `provider/model` ID.
-- `VERCEL_TEAM_ID` and `VERCEL_PROJECT_ID`, plus `VERCEL_TOKEN` or `VERCEL_OIDC_TOKEN`: credentials for the Vercel Sandbox SDK. A Sandbox CLI login alone may not populate these environment variables for this Node process.
+- For local Vercel authentication, link a Vercel project with `vercel link`, then run `vercel env pull` to write `VERCEL_OIDC_TOKEN` to `.env.local`. Alternatively, set `VERCEL_TOKEN`, `VERCEL_TEAM_ID`, and `VERCEL_PROJECT_ID`. A Sandbox CLI login alone may not populate these environment variables for this Node process.
 - The API key for the chosen model provider. The current setup passes `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, and `OPENROUTER_API_KEY` when present into the sandbox.
 
 The sandbox setup installs OpenCode and pnpm, clones the repository, and installs dependencies. The preview starts Vite+ on port 5173. OpenCode uses `acceptEdits`, which permits file changes but denies shell commands that ask for approval. The control app starts the preview server itself. This is a single-user local demo; add authentication, durable instance storage, and run controls before deploying it for other users.

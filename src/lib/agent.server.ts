@@ -14,16 +14,17 @@ const defaultRepositoryUrl = "https://github.com/DogPawHat/ai-tink-ts-ai-demo.gi
 function createAgentConfiguration() {
   const repositoryUrl = process.env.DEMO_REPOSITORY_URL || defaultRepositoryUrl;
   const model = process.env.OPENCODE_MODEL;
-  const hasVercelAuth = Boolean(process.env.VERCEL_TOKEN || process.env.VERCEL_OIDC_TOKEN);
-  const hasVercelScope = Boolean(process.env.VERCEL_TEAM_ID && process.env.VERCEL_PROJECT_ID);
+  const hasVercelAuth = Boolean(
+    process.env.VERCEL_OIDC_TOKEN ||
+    (process.env.VERCEL_TOKEN && process.env.VERCEL_TEAM_ID && process.env.VERCEL_PROJECT_ID),
+  );
   const providerKeys = Object.fromEntries(
     providerKeyNames.flatMap((name) => (process.env[name] ? [[name, process.env[name]]] : [])),
   ) as Record<string, string>;
 
   const missing = [
     !model && "OPENCODE_MODEL",
-    !hasVercelAuth && "VERCEL_TOKEN or VERCEL_OIDC_TOKEN",
-    !hasVercelScope && "VERCEL_TEAM_ID and VERCEL_PROJECT_ID",
+    !hasVercelAuth && "VERCEL_OIDC_TOKEN or VERCEL_TOKEN with team/project IDs",
     Object.keys(providerKeys).length === 0 && "a supported model provider API key",
   ].filter((item): item is string => Boolean(item));
 
