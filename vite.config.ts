@@ -1,6 +1,10 @@
 import { defineConfig } from "vite-plus";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
 
 export default defineConfig({
+  plugins: [tanstackStart(), viteReact()],
+  server: { port: 3000, allowedHosts: [".vercel.run"] },
   staged: {
     "*": "vp check --fix",
   },
