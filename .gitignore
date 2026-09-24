@@ -23,7 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# dotenv environment variable files
+# Local environment values; the Varlock schema is tracked.
 .env
 .env.*
-!.env.example
+!.env.schema

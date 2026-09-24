@@ -1,9 +1,10 @@
 import { defineConfig } from "vite-plus";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
+import { varlockVitePlugin } from "@varlock/vite-integration";
 
 export default defineConfig({
-  plugins: [tanstackStart(), viteReact()],
+  plugins: [varlockVitePlugin(), tanstackStart(), viteReact()],
   server: { port: 3000 },
   staged: {
     "*": "vp check --fix",

@@ -1,11 +1,6 @@
 import "@tanstack/react-start/server-only";
 import { defineSandbox } from "@tanstack/ai-sandbox";
 import { localProcessSandbox } from "@tanstack/ai-sandbox-local-process";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-
-const localEnvFile = join(process.cwd(), ".env.local");
-if (existsSync(localEnvFile)) process.loadEnvFile(localEnvFile);
 
 export function getAgentConfiguration() {
   const model = process.env.OPENCODE_MODEL;
