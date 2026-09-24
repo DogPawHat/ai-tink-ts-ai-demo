@@ -5,7 +5,7 @@ import { varlockVitePlugin } from "@varlock/vite-integration";
 
 export default defineConfig({
   plugins: [varlockVitePlugin(), tanstackStart(), viteReact()],
-  server: { port: 3000 },
+  server: { port: 3000, allowedHosts: ["dogpawbot.taildd39d.ts.net"] },
   staged: {
     "*": "vp check --fix",
   },
