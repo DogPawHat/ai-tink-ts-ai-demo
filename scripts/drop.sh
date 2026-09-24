@@ -12,7 +12,7 @@ case "${1:-}" in
     drop run --mount "$toolchain_dir" bash -c 'npm install --prefix "$HOME/.local" -g --allow-scripts=opencode-ai opencode-ai'
     ;;
   dev)
-    drop run --mount "$toolchain_dir" --tcp-publish 3000 vp dev --host 0.0.0.0
+    vp exec varlock run -- drop run --mount "$toolchain_dir" --tcp-publish 3000 vp dev --host 0.0.0.0
     ;;
   *)
     echo "Usage: $0 {setup|dev}" >&2

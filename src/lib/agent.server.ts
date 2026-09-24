@@ -1,5 +1,5 @@
 import "@tanstack/react-start/server-only";
-import { defineSandbox } from "@tanstack/ai-sandbox";
+import { defineSandbox, defineWorkspace, localSource } from "@tanstack/ai-sandbox";
 import { localProcessSandbox } from "@tanstack/ai-sandbox-local-process";
 
 export function getAgentConfiguration() {
@@ -14,6 +14,7 @@ export function getAgentConfiguration() {
   const sandbox = defineSandbox({
     id: "self-editing-demo",
     provider: localProcessSandbox({ dir: process.cwd() }),
+    workspace: defineWorkspace({ source: localSource(process.cwd()), root: "." }),
     lifecycle: { reuse: "thread" },
   });
   return { missing: [], model, sandbox } as const;
