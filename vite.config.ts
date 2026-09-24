@@ -4,7 +4,7 @@ import viteReact from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [tanstackStart(), viteReact()],
-  server: { port: 3000, allowedHosts: [".vercel.run"] },
+  server: { port: 3000 },
   staged: {
     "*": "vp check --fix",
   },

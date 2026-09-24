@@ -1,52 +1,25 @@
 import "@tanstack/react-start/server-only";
-import { createSecrets, defineSandbox, defineWorkspace, gitSource } from "@tanstack/ai-sandbox";
-import { vercelSandbox } from "@tanstack/ai-sandbox-vercel";
+import { defineSandbox } from "@tanstack/ai-sandbox";
+import { localProcessSandbox } from "@tanstack/ai-sandbox-local-process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
-const providerKeyNames = [
-  "OPENAI_API_KEY",
-  "ANTHROPIC_API_KEY",
-  "GOOGLE_GENERATIVE_AI_API_KEY",
-  "OPENROUTER_API_KEY",
-] as const;
-
-const defaultRepositoryUrl = "https://github.com/DogPawHat/ai-tink-ts-ai-demo.git";
-
-function createAgentConfiguration() {
-  const repositoryUrl = process.env.DEMO_REPOSITORY_URL || defaultRepositoryUrl;
-  const model = process.env.OPENCODE_MODEL;
-  const hasVercelAuth = Boolean(
-    process.env.VERCEL_OIDC_TOKEN ||
-    (process.env.VERCEL_TOKEN && process.env.VERCEL_TEAM_ID && process.env.VERCEL_PROJECT_ID),
-  );
-  const providerKeys = Object.fromEntries(
-    providerKeyNames.flatMap((name) => (process.env[name] ? [[name, process.env[name]]] : [])),
-  ) as Record<string, string>;
-
-  const missing = [
-    !model && "OPENCODE_MODEL",
-    !hasVercelAuth && "VERCEL_OIDC_TOKEN or VERCEL_TOKEN with team/project IDs",
-    Object.keys(providerKeys).length === 0 && "a supported model provider API key",
-  ].filter((item): item is string => Boolean(item));
-
-  if (missing.length > 0 || !model) return { missing } as const;
-
-  const sandbox = defineSandbox({
-    id: "self-editing-demo",
-    provider: vercelSandbox({ runtime: "node24", ports: [5173], persistent: true }),
-    workspace: defineWorkspace({
-      source: gitSource({ url: repositoryUrl }),
-      setup: ["sudo npm install -g opencode-ai pnpm@12.6.0", "pnpm install --frozen-lockfile"],
-      secrets: createSecrets(providerKeys),
-    }),
-    lifecycle: { reuse: "thread", keepAlive: "1h" },
-  });
-
-  return { missing: [], model, sandbox } as const;
-}
-
-let cachedConfiguration: ReturnType<typeof createAgentConfiguration> | undefined;
+const localEnvFile = join(process.cwd(), ".env.local");
+if (existsSync(localEnvFile)) process.loadEnvFile(localEnvFile);
 
 export function getAgentConfiguration() {
-  cachedConfiguration ??= createAgentConfiguration();
-  return cachedConfiguration;
+  const model = process.env.OPENCODE_MODEL;
+  const missing = [
+    !process.env.DROP_ENV && "a Drop environment (start with drop run)",
+    !model && "OPENCODE_MODEL",
+  ].filter((item): item is string => Boolean(item));
+  if (missing.length > 0 || !model) return { missing } as const;
+
+  // The fixed working tree is safe only when the whole app runs inside Drop.
+  const sandbox = defineSandbox({
+    id: "self-editing-demo",
+    provider: localProcessSandbox({ dir: process.cwd() }),
+    lifecycle: { reuse: "thread" },
+  });
+  return { missing: [], model, sandbox } as const;
 }

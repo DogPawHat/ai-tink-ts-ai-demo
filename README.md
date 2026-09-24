@@ -1,26 +1,17 @@
 # TanStack AI self-editing demo
 
-This is a TanStack Start app using Vite+. The control page sends prompts through TanStack AI to the OpenCode harness in a Vercel Sandbox. The sandbox clones this repository, so edits stay outside the local control app. `/canvas` is the page the agent is meant to change.
+This TanStack Start app sends chat prompts through TanStack AI's OpenCode adapter. OpenCode edits the same working tree that Vite serves, so a prompt such as “Make the site purple” appears through Vite hot reload. The Vite server and OpenCode both run inside one [Drop](https://droprun.sh/docs/running/) environment.
 
-## Local development
+## Run locally
 
-```sh
-vp install
-vp dev
-```
+1. Install [Drop](https://droprun.sh/docs/installation/) and create an environment in this repo with `drop init`. If you already ran it here, reuse that environment.
+2. Run `vp install` on the host. Copy `.env.example` to `.env.local` and set `OPENCODE_MODEL` to a model available in OpenCode. You can authenticate OpenCode inside Drop or set the matching provider API key in `.env.local`.
+3. Install OpenCode in the Drop home using `vp run setup:drop`. This mounts the local Vite+ toolchain read only and installs `opencode-ai` only in the Drop environment.
+4. Start the app with `vp run dev:drop`, then open `http://localhost:3000`.
 
-Open `http://localhost:3000`. The page and its local starter preview work without credentials. The **Launch sandbox** button creates a remote sandbox only when clicked. Once configured, sending a prompt also creates or resumes the sandbox for the local demo thread.
+The Drop launch publishes only port 3000 to host localhost. OpenCode's internal server stays on Drop's isolated loopback. `drop init` grants write access to this project and read-only access to `.git`; review the generated Drop config if you changed it. The agent can edit project files, including this app's source, and Vite will reload those edits. Keep the app local: it has no user authentication or per-user isolation.
 
-## Sandbox configuration
-
-Copy `.env.example` to `.env.local` and fill in:
-
-- `DEMO_REPOSITORY_URL` is optional. The app defaults to this repository's GitHub URL; set it when using a fork. Push the app changes before launching a preview, since the sandbox clones the remote branch.
-- `OPENCODE_MODEL`: an OpenCode `provider/model` ID.
-- For local Vercel authentication, link a Vercel project with `vercel link`, then run `vercel env pull` to write `VERCEL_OIDC_TOKEN` to `.env.local`. Alternatively, set `VERCEL_TOKEN`, `VERCEL_TEAM_ID`, and `VERCEL_PROJECT_ID`. A Sandbox CLI login alone may not populate these environment variables for this Node process.
-- The API key for the chosen model provider. The current setup passes `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, and `OPENROUTER_API_KEY` when present into the sandbox.
-
-The sandbox setup installs OpenCode and pnpm, clones the repository, and installs dependencies. The preview starts Vite+ on port 5173. OpenCode uses `acceptEdits`, which permits file changes but denies shell commands that ask for approval. The control app starts the preview server itself. This is a single-user local demo; add authentication, durable instance storage, and run controls before deploying it for other users.
+The chat endpoint checks `DROP_ENV` before running OpenCode, so starting the app with plain `vp dev` shows the page but does not run an agent on the host.
 
 ## Validation
 
@@ -29,5 +20,3 @@ vp check
 vp test
 vp build
 ```
-
-There are no test files in the base template yet, so `vp test` currently reports that it found no tests.

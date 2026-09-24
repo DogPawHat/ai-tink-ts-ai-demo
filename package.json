@@ -7,6 +7,8 @@
     "dev": "vp dev",
     "build": "vp build",
     "preview": "vp preview",
+    "setup:drop": "bash scripts/drop.sh setup",
+    "dev:drop": "bash scripts/drop.sh dev",
     "prepare": "vp config"
   },
   "dependencies": {
@@ -14,7 +16,7 @@
     "@tanstack/ai-opencode": "^0.4.9",
     "@tanstack/ai-react": "^0.27.3",
     "@tanstack/ai-sandbox": "^0.5.12",
-    "@tanstack/ai-sandbox-vercel": "^0.2.4",
+    "@tanstack/ai-sandbox-local-process": "^0.2.5",
     "@tanstack/react-router": "^1.170.38",
     "@tanstack/react-start": "^1.168.57",
     "react": "^19.3.0",

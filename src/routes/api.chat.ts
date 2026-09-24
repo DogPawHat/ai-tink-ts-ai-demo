@@ -21,8 +21,14 @@ export const Route = createFileRoute("/api/chat")({
             ? params.forwardedProps.sessionId
             : undefined;
         const response = chat({
-          adapter: opencodeText(config.model, { permissionMode: "acceptEdits" }),
+          adapter: opencodeText(config.model, {
+            permissionMode: "acceptEdits",
+            directory: "/workspace",
+          }),
           messages: params.messages,
+          systemPrompts: [
+            "You are editing the Vite app that hosts this conversation. Make the requested change directly in this project's files. The page at / is the live site. Keep the chat working and give a concise summary of edits. Vite will hot reload the browser.",
+          ],
           threadId: params.threadId ?? "local-demo",
           runId: params.runId,
           modelOptions: { sessionId },

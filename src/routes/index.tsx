@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
 
 export const Route = createFileRoute("/")({ component: Home });
@@ -7,9 +7,6 @@ export const Route = createFileRoute("/")({ component: Home });
 function Home() {
   const [draft, setDraft] = useState("");
   const [sessionId, setSessionId] = useState<string | undefined>();
-  const [previewUrl, setPreviewUrl] = useState("/canvas");
-  const [previewStatus, setPreviewStatus] = useState("Local starter");
-  const [previewBusy, setPreviewBusy] = useState(false);
   const { messages, sendMessage, isLoading, error, stop } = useChat({
     threadId: "local-demo",
     connection: fetchServerSentEvents("/api/chat", () => ({ body: { sessionId } })),
@@ -34,36 +31,28 @@ function Home() {
     setDraft("");
   }
 
-  async function launchPreview() {
-    setPreviewBusy(true);
-    setPreviewStatus("Starting sandbox…");
-    try {
-      const response = await fetch("/api/preview", { method: "POST" });
-      if (!response.ok) throw new Error(await response.text());
-      const result: { url: string } = await response.json();
-      setPreviewUrl(result.url);
-      setPreviewStatus("Vercel Sandbox");
-    } catch (cause) {
-      setPreviewStatus(cause instanceof Error ? cause.message : "Preview failed");
-    } finally {
-      setPreviewBusy(false);
-    }
-  }
-
   return (
     <main className="shell">
       <header className="masthead">
-        <div>
-          <span className="eyebrow">TanStack Start × TanStack AI</span>
-          <h1>Ask the app to change itself.</h1>
-          <p>Prompts stream through TanStack AI to a coding agent in a Vercel Sandbox.</p>
-        </div>
-        <Link to="/canvas" className="preview-link">
-          Open editable canvas ↗
-        </Link>
+        <span className="eyebrow">TanStack AI × OpenCode × Drop</span>
+        <h1>Make this site yours.</h1>
+        <p>
+          Describe a change. OpenCode edits this app, and Vite shows it as soon as the files change.
+        </p>
       </header>
 
-      <section className="workspace" aria-label="Agent workspace">
+      <section className="workspace" aria-label="Live site and chat">
+        <div className="panel showcase">
+          <span className="eyebrow">Live site</span>
+          <div className="showcase-content">
+            <span className="showcase-icon" aria-hidden="true">
+              ✦
+            </span>
+            <h2>Your next idea starts here.</h2>
+            <p>Try a new color, layout, or look. This page is the agent's workspace.</p>
+          </div>
+        </div>
+
         <div className="panel conversation">
           <div className="panel-heading">
             <h2>Conversation</h2>
@@ -72,8 +61,8 @@ function Home() {
           <div className="messages" aria-live="polite">
             {messages.length === 0 ? (
               <div className="empty-state">
-                <p>Try “Turn the canvas into a colorful task board.”</p>
-                <small>Sandbox configuration is documented in README.md.</small>
+                <p>Try “Make the site purple.”</p>
+                <small>The agent edits this running app inside Drop.</small>
               </div>
             ) : (
               messages.map((message) => (
@@ -100,17 +89,17 @@ function Home() {
             </p>
           )}
           <form onSubmit={submit} className="composer">
-            <label htmlFor="prompt">What should the agent change?</label>
+            <label htmlFor="prompt">What should change?</label>
             <textarea
               id="prompt"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="Describe a change to the canvas…"
+              placeholder="Describe a change to this site…"
               rows={3}
               disabled={isLoading}
             />
             <div className="composer-actions">
-              <span>Edits run in a remote sandbox.</span>
+              <span>Edits appear here through Vite hot reload.</span>
               {isLoading ? (
                 <button type="button" onClick={stop}>
                   Stop
@@ -122,18 +111,6 @@ function Home() {
               )}
             </div>
           </form>
-        </div>
-        <div className="panel preview-panel">
-          <div className="panel-heading">
-            <h2>Preview</h2>
-            <div className="preview-controls">
-              <span>{previewStatus}</span>
-              <button type="button" onClick={() => void launchPreview()} disabled={previewBusy}>
-                {previewBusy ? "Starting…" : "Launch sandbox"}
-              </button>
-            </div>
-          </div>
-          <iframe title="Editable canvas preview" src={previewUrl} />
         </div>
       </section>
     </main>
