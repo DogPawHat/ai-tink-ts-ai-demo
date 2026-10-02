@@ -9,7 +9,7 @@ fi
 
 case "${1:-}" in
   setup)
-    drop run --mount "$toolchain_dir" bash -c 'npm install --prefix "$HOME/.local" -g --allow-scripts=opencode-ai opencode-ai'
+    drop run --mount "$toolchain_dir" vp --version
     ;;
   dev)
     vp exec varlock run -- drop run --mount "$toolchain_dir" --tcp-publish 3000 vp dev --host 0.0.0.0

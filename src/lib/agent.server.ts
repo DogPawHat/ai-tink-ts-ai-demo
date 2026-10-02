@@ -1,21 +1,45 @@
 import "@tanstack/react-start/server-only";
-import { defineSandbox, defineWorkspace, localSource } from "@tanstack/ai-sandbox";
-import { localProcessSandbox } from "@tanstack/ai-sandbox-local-process";
+import { createHarnessHost, defineHarness } from "@tanstack/ai-harness";
+import { projectInstructions, workspaceTools } from "@tanstack/ai-harness/plugins";
+import { memoryPersistence } from "@tanstack/ai-persistence";
+import { OpenAIBaseChatCompletionsTextAdapter } from "@tanstack/openai-base";
+import OpenAI from "openai";
+
+class ZenTextAdapter extends OpenAIBaseChatCompletionsTextAdapter<string> {
+  override readonly inputModalities = ["text"] as const;
+}
+
+const host = createHarnessHost({ persistence: memoryPersistence() });
+let harness: ReturnType<typeof defineHarness> | undefined;
 
 export function getAgentConfiguration() {
-  const model = process.env.OPENCODE_MODEL;
+  const apiKey = process.env.OPENCODE_API_KEY;
+  const model = (process.env.OPENCODE_MODEL || "opencode/deepseek-v4.1-flash").replace(
+    /^opencode\//,
+    "",
+  );
   const missing = [
     !process.env.DROP_ENV && "a Drop environment (start with drop run)",
-    !model && "OPENCODE_MODEL",
+    !apiKey && "OPENCODE_API_KEY",
   ].filter((item): item is string => Boolean(item));
-  if (missing.length > 0 || !model) return { missing } as const;
+  if (missing.length > 0 || !apiKey) return { missing } as const;
 
-  // The fixed working tree is safe only when the whole app runs inside Drop.
-  const sandbox = defineSandbox({
-    id: "self-editing-demo",
-    provider: localProcessSandbox({ dir: process.cwd() }),
-    workspace: defineWorkspace({ source: localSource(process.cwd()), root: "." }),
-    lifecycle: { reuse: "thread" },
+  // Tools edit the live working tree; the whole app must run inside Drop.
+  harness ??= defineHarness({
+    name: "self-editing-demo",
+    adapter: new ZenTextAdapter(
+      model,
+      "opencode-zen",
+      new OpenAI({ apiKey, baseURL: "https://opencode.ai/zen/v1" }),
+    ),
+    systemPrompts: [
+      "You are editing the Vite app that hosts this conversation. Read before editing, then make the requested change directly in this project's files. The page at / is the live site. Keep the chat working and give a concise summary of edits. Vite will hot reload the browser. Use vp for package management and validation.",
+    ],
+    // Drop supplies process isolation. These tools run autonomously inside it.
+    plugins: () => [
+      workspaceTools({ root: process.cwd() }),
+      projectInstructions({ root: process.cwd() }),
+    ],
   });
-  return { missing: [], model, sandbox } as const;
+  return { missing: [], host, harness } as const;
 }

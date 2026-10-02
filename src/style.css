@@ -1,207 +1,131 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@source "../node_modules/streamdown/dist/*.js";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: "Geist Variable", sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  color: #18322c;
-  background: #f1f4ec;
-  font-synthesis: none;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
-* {
-  box-sizing: border-box;
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
-body {
-  margin: 0;
-}
-button,
-textarea {
-  font: inherit;
-}
-.shell {
-  max-width: 1480px;
-  margin: 0 auto;
-  padding: 48px 32px;
-}
-.masthead {
-  margin-bottom: 38px;
-}
-.masthead h1 {
-  margin: 12px 0;
-  font-size: clamp(2.6rem, 5vw, 5.4rem);
-  line-height: 1.02;
-  letter-spacing: -0.055em;
-}
-.masthead p {
-  color: #52665e;
-  font-size: 1.08rem;
-}
-.eyebrow {
-  color: #267158;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-.workspace {
-  display: grid;
-  grid-template-columns: minmax(380px, 3fr) minmax(340px, 2fr);
-  gap: 18px;
-  min-height: 660px;
-}
-.panel {
-  border: 1px solid #d3ded1;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 14px 50px #2948390d;
-  overflow: hidden;
-}
-.showcase {
-  padding: clamp(28px, 5vw, 60px);
-  display: flex;
-  flex-direction: column;
-  background:
-    radial-gradient(circle at 15% 20%, #d8f5c6, transparent 35%),
-    radial-gradient(circle at 80% 80%, #c7e3e6, transparent 40%), #fafaf0;
-}
-.showcase-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  max-width: 520px;
-}
-.showcase-icon {
-  color: #267158;
-  font-size: 4rem;
-}
-.showcase h2 {
-  font-size: clamp(2.8rem, 5vw, 5rem);
-  line-height: 1;
-  letter-spacing: -0.055em;
-  margin: 18px 0;
-}
-.showcase p {
-  font-size: 1.12rem;
-  line-height: 1.6;
-  color: #5b6c61;
-}
-.conversation {
-  display: flex;
-  flex-direction: column;
-}
-.panel-heading {
-  min-height: 64px;
-  padding: 0 22px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #e5ece5;
-}
-.panel-heading h2 {
-  margin: 0;
-  font-size: 1rem;
-}
-.panel-heading span {
-  color: #71847a;
-  font-size: 0.84rem;
-}
-.messages {
-  flex: 1;
-  min-height: 300px;
-  max-height: 560px;
-  overflow: auto;
-  padding: 22px;
-}
-.empty-state {
-  padding: 32px 16px;
-  color: #53665c;
-  text-align: center;
-}
-.empty-state p {
-  font-size: 1.25rem;
-}
-.empty-state small {
-  color: #87978e;
-}
-.message {
-  margin-bottom: 24px;
-}
-.message strong {
-  font-size: 0.82rem;
-  color: #267158;
-}
-.message p {
-  line-height: 1.55;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.tool-event {
-  margin-top: 8px;
-  border-radius: 10px;
-  background: #edf4ed;
-  padding: 8px 12px;
-  font-size: 0.82rem;
-}
-.tool-event pre {
-  overflow: auto;
-  max-height: 200px;
-}
-.error {
-  margin: 0 22px 14px;
-  padding: 12px;
-  border-radius: 10px;
-  background: #fff0e8;
-  color: #a13e21;
-}
-.composer {
-  padding: 20px 22px;
-  border-top: 1px solid #e5ece5;
-}
-.composer label {
-  display: block;
-  margin-bottom: 9px;
-  font-weight: 700;
-  font-size: 0.86rem;
-}
-.composer textarea {
-  width: 100%;
-  resize: vertical;
-  border: 1px solid #cbd9cc;
-  border-radius: 12px;
-  padding: 12px;
-  outline-color: #338463;
-}
-.composer-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  margin-top: 12px;
-}
-.composer-actions span {
-  color: #829288;
-  font-size: 0.78rem;
-}
-button {
-  border: 0;
-  border-radius: 10px;
-  background: #217352;
-  color: white;
-  padding: 11px 17px;
-  cursor: pointer;
-  font-weight: 700;
-  white-space: nowrap;
-}
-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-@media (max-width: 900px) {
-  .workspace {
-    grid-template-columns: 1fr;
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-  .shell {
-    padding: 28px 16px;
+  body {
+    @apply bg-background text-foreground;
   }
-  .showcase {
-    min-height: 420px;
+  html {
+    @apply font-sans;
   }
 }

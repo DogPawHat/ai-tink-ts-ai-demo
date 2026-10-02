@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { chat, chatParamsFromRequest, toServerSentEventsResponse } from "@tanstack/ai";
-import { opencodeText } from "@tanstack/ai-opencode";
-import { withSandbox } from "@tanstack/ai-sandbox";
+import { chatParamsFromRequest, toServerSentEventsResponse } from "@tanstack/ai";
 import { getAgentConfiguration } from "../lib/agent.server";
 
 export const Route = createFileRoute("/api/chat")({
@@ -9,34 +7,41 @@ export const Route = createFileRoute("/api/chat")({
     handlers: {
       POST: async ({ request }) => {
         const config = getAgentConfiguration();
-        if (config.missing.length > 0 || !config.sandbox || !config.model) {
-          return new Response(`Agent setup needed: ${config.missing.join(", ")}`, {
-            status: 503,
-          });
+        if (!config.harness) {
+          return new Response(`Agent setup needed: ${config.missing.join(", ")}`, { status: 503 });
         }
-
         const params = await chatParamsFromRequest(request);
-        const sessionId =
-          typeof params.forwardedProps.sessionId === "string"
-            ? params.forwardedProps.sessionId
-            : undefined;
-        const response = chat({
-          adapter: opencodeText(config.model, {
-            permissionMode: "acceptEdits",
-            directory: "/workspace",
-          }),
-          messages: params.messages,
-          systemPrompts: [
-            "You are editing the Vite app that hosts this conversation. Make the requested change directly in this project's files. The page at / is the live site. Keep the chat working and give a concise summary of edits. Vite will hot reload the browser.",
-          ],
+        const message = params.messages.findLast((entry) => entry.role === "user");
+        if (!message) return new Response("A user message is required", { status: 400 });
+        const session = await config.host.open(config.harness, {
           threadId: params.threadId ?? "local-demo",
-          runId: params.runId,
-          modelOptions: { sessionId },
-          stream: true,
-          middleware: [withSandbox(config.sandbox)],
         });
-
-        return toServerSentEventsResponse(response);
+        const input =
+          "content" in message
+            ? message.content
+            : message.parts
+                .filter((part) => part.type === "text")
+                .map((part) => part.content)
+                .join("\n");
+        if (!input) return new Response("A non-empty prompt is required", { status: 400 });
+        const operation = session.prompt(input, { busy: "reject" });
+        const delivery = new AbortController();
+        const cancel = () => {
+          void operation.cancel("Client disconnected");
+        };
+        const disconnect = () => delivery.abort();
+        delivery.signal.addEventListener("abort", cancel, { once: true });
+        request.signal.addEventListener("abort", disconnect, { once: true });
+        if (request.signal.aborted) disconnect();
+        async function* stream() {
+          try {
+            yield* operation.stream({ signal: delivery.signal });
+          } finally {
+            request.signal.removeEventListener("abort", disconnect);
+            delivery.signal.removeEventListener("abort", cancel);
+          }
+        }
+        return toServerSentEventsResponse(stream(), { abortController: delivery });
       },
     },
   },

@@ -1,19 +1,22 @@
 # TanStack AI self-editing demo
 
-This TanStack Start app sends chat prompts through TanStack AI's OpenCode adapter. OpenCode edits the same working tree that Vite serves, so a prompt such as “Make the site purple” appears through Vite hot reload. The Vite server and OpenCode both run inside one [Drop](https://droprun.sh/docs/running/) environment.
+This TanStack Start app uses the native TanStack AI harness from [PR #1555](https://github.com/TanStack/ai/pull/1555), pinned through pkg.pr.new to commit `5cc000e`. The harness reads and edits the working tree and runs shell commands with its workspace tools. The app and harness run together inside [Drop](https://droprun.sh/docs/running/), so edits appear through Vite hot reload.
+
+The model is OpenCode Zen's `deepseek-v4.1-flash`, called directly through `https://opencode.ai/zen/v1/chat/completions`. No OpenCode CLI or server is needed. The interface uses shadcn/ui Base UI, Tailwind CSS, and AI Elements for messages and tool activity.
 
 ## Run locally
 
-1. Install [Drop](https://droprun.sh/docs/installation/) and create an environment in this repo with `drop init`. If you already ran it here, reuse that environment.
-2. Run `vp install` on the host. Set `OPENCODE_MODEL` to an `opencode/*` model available through OpenCode Zen, either in your shell or in a git-ignored `.env.local` file. Set `OPENCODE_API_KEY` in `.env.local` or authenticate OpenCode inside Drop. Use [Varlock local encryption](https://varlock.dev/guides/local-encryption/) for the stored key.
-3. Install OpenCode in the Drop home using `vp run setup:drop`. This mounts the local Vite+ toolchain read only and installs `opencode-ai` only in the Drop environment.
-4. In the Drop environment config created by `drop init`, add `OPENCODE_MODEL` and `OPENCODE_API_KEY` to `[environ].exposed_vars`. Start the app with `vp run dev:drop`, then open `http://localhost:3000`. This launch decrypts Varlock values on the host, then forwards those two variables to Drop.
+1. Install Drop and run `drop init` in this repo, or reuse its existing environment.
+2. Run `vp install` on the host. The preview packages reference other matching preview packages, so `pnpm-workspace.yaml` allows URL subdependencies.
+3. Set `OPENCODE_API_KEY` in your shell or git-ignored `.env.local`. Use [Varlock local encryption](https://varlock.dev/guides/local-encryption/) for stored keys. Existing encrypted keys are reused. The native harness requires the API key; it does not use the OpenCode CLI's saved authentication.
+4. Add `OPENCODE_MODEL` and `OPENCODE_API_KEY` to `[environ].exposed_vars` in the Drop environment config. `OPENCODE_MODEL` defaults to `opencode/deepseek-v4.1-flash`; the `opencode/` prefix is removed for Zen API requests.
+5. Run `vp run setup:drop` to check the mounted Vite+ toolchain, then `vp run dev:drop`. Open `http://localhost:3000`.
 
-The Drop launch publishes only port 3000 to host localhost. OpenCode's internal server stays on Drop's isolated loopback. `drop init` grants write access to this project and read-only access to `.git`; review the generated Drop config if you changed it. The agent can edit project files, including this app's source, and Vite will reload those edits. Keep the app local: it has no user authentication or per-user isolation.
+The launch decrypts Varlock values on the host, forwards configuration into Drop, and publishes only port 3000 to localhost. Workspace tools run autonomously inside Drop. The chat endpoint checks `DROP_ENV` before opening a harness session. Keep this demo local: it has no user authentication or per-user isolation. Drop's environment config controls filesystem access; its default project mount is writable and `.git` is read-only.
 
-The chat endpoint checks `DROP_ENV` before running OpenCode, so starting the app with plain `vp dev` shows the page but does not run an agent on the host.
+The server holds one harness session per thread in memory. Each prompt continues that session, and stopping a request cancels its operation. History is lost on a server restart, including a server reload after edits to server code. The UI renders the harness's streamed messages and tool calls.
 
-Varlock's Vite plugin loads the schema for development and builds. Run `vp exec varlock load --agent` to inspect validation results with the key redacted. Keep `.env.local` out of version control. The key is optional because OpenCode can use its own authentication; `OPENCODE_MODEL` is checked by the chat endpoint when running inside Drop.
+Varlock's Vite plugin loads configuration for development and builds. Run `vp exec varlock load --agent` for redacted validation. If a locally encrypted key fails to decrypt, reset it using Varlock on this machine before starting the app. Keep `.env.local` out of version control.
 
 ## Validation
 
@@ -22,3 +25,5 @@ vp check
 vp test
 vp build
 ```
+
+For checks without a usable local key, prefix each command with `OPENCODE_API_KEY=''`. This validates the code without making model requests. The harness test uses a scripted model to verify real workspace edits, streamed tool activity, and session history.
