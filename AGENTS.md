@@ -25,3 +25,9 @@ release. Add a tool name to select part of the graph. For example, run
 - [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
 
 <!--VITE PLUS END-->
+
+## Repository layout
+
+This is a pnpm workspace of TanStack AI demos. Each demo is a package in `apps/`. Shared lint, format, and staged-file settings live in the root `vite.config.ts`; Vite+ does not apply `lint` or `fmt` blocks from app configs. Use `vp -C apps/<name> <command>` to run built-in commands for one app.
+
+`apps/self-editing/AGENTS.md` is read by that app's harness at runtime. Keep it focused on the app.
