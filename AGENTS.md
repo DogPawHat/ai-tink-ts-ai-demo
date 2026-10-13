@@ -28,6 +28,10 @@ release. Add a tool name to select part of the graph. For example, run
 
 ## Repository layout
 
-This is a pnpm workspace of TanStack AI demos. Each demo is a package in `apps/`. Shared lint, format, and staged-file settings live in the root `vite.config.ts`; Vite+ does not apply `lint` or `fmt` blocks from app configs. Use `vp -C apps/<name> <command>` to run built-in commands for one app.
+This is a pnpm workspace of TanStack AI demos. Each demo is one or more packages in `apps/`. Shared lint, format, and staged-file settings live in the root `vite.config.ts`; Vite+ does not apply `lint` or `fmt` blocks from app configs. Use `vp -C apps/<name> <command>` to run built-in commands for one app.
 
-`apps/self-editing/AGENTS.md` is read by that app's harness at runtime. Keep it focused on the app.
+`apps/self-editing/AGENTS.md` is the briefing the coding agent reads at runtime. Keep it focused on the site.
+
+## Docs
+
+Read [`docs/README.md`](docs/README.md) before changing app structure, hosting, or the development setup. It covers the toolchain and machine quirks (including TPM access for Varlock), the self-editing app's architecture, and the plans for hosting and further demos. Update those docs when you change or verify something they describe.

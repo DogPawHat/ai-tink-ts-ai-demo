@@ -1,28 +1,43 @@
-# Self-editing demo: current architecture
+# Self-editing demo: architecture
 
-`apps/self-editing` is a single TanStack Start app. The chat, the agent, and the site the agent edits run in one `vp dev` process inside Drop.
+Visitors open their own copy of a site and change it by chatting with a coding agent. The site and the agent run on a [Fly Sprite](https://docs.fly.io/sprites) (a hardware-isolated microVM) per visitor. A small Fly app, the host, sets the Sprite up and runs the agent.
+
+```
+Browser                       Fly app "ai-tink-host" (host)           Sprite "ai-tink-<id>" (one per visitor)
+  │  GET /?key=…                ├─ landing + cookie → Sprite name         ├─ :8080 proxy (service, root-owned file)
+  ├────────────────────────────►├─ creates + sets up the Sprite ─────────►│   ├─ forwards to Vite on :5173
+  │  302 → Sprite URL           │   (uploads site, pnpm install, services) │   ├─ passes Vite's HMR WebSocket through
+  │◄────────────────────────────┤                                          │   └─ injects <script src=host/widget.js>
+  │  page + widget.js           ├─ GET /widget.js                          ├─ :5173 `vp dev` serving ~/site (agent-writable)
+  │◄───────────────────────────────────────────────────────────────────────┤
+  │  POST /api/chat (SSE) ─────►├─ chat(): Claude Code via the sandbox ──►├─ claude … ──► Sprites gateway ──► OpenRouter
+  │◄────────────────────────────┤   adapter, exec over the Sprites API     └─ edits ~/site → Vite → browser hot reload
+```
 
 ## Pieces
 
-- **Page** (`src/routes/index.tsx`): the chat UI uses `useChat` with `fetchServerSentEvents("/api/chat")` and sits beside a "Live site" card. The card is part of the same React page, not a separate site.
-- **Chat endpoint** (`src/routes/api.chat.ts`): opens a harness session for the thread, calls `session.prompt(input, { busy: "reject" })`, and streams the operation as server-sent events. A client disconnect cancels the operation.
-- **Agent** (`src/lib/agent.server.ts`): `defineHarness` with an OpenAI-compatible chat-completions adapter pointed at OpenCode Zen (`https://opencode.ai/zen/v1`), plus the `workspaceTools` and `projectInstructions` plugins rooted at `process.cwd()`. It refuses to start unless `DROP_ENV` and `OPENCODE_API_KEY` are set.
-- **Persistence**: `memoryPersistence()`, so sessions live in the server process.
-- **Project instructions**: `projectInstructions` reads `AGENTS.md` and `CLAUDE.md` from the app directory only. `apps/self-editing/AGENTS.md` is part of the runtime system prompt.
+- **Site** (`apps/self-editing`): a TanStack Start app with no chat. It is what the agent edits. `scripts/pack-site.mjs` packs it into `dist/site.tgz`, the template every Sprite starts from.
+- **Host** (`apps/self-editing-host/src/server`): a plain Node HTTP server on Fly.
+  - **Landing** (`index.ts`, `pages.ts`): gated by `?key=<ACCESS_KEY>` (then a cookie). A second cookie holds the visitor's Sprite name, `ai-tink-<12 hex>`. A visit starts setup if the Sprite is missing, shows a progress page, and redirects to the Sprite's URL when it is ready.
+  - **Setup** (`sprites.ts`): idempotent and one run per Sprite at a time. Create the Sprite with a private URL, upload the template, install pnpm and the site's dependencies, install the proxy under `/opt/ai-tink`, create the `site` and `proxy` services, wait until the page answers, write a ready marker. About 25 to 30 s. "Reset" repeats it after deleting the site.
+  - **Chat** (`chat.ts`, `sandbox.ts`): `chat()` with `claudeCodeText` and `withSandbox`, streamed as server-sent events. `sandbox.ts` attaches to the visitor's Sprite and replaces the Sprites provider's slow process and file calls; see Fragile points.
+- **Proxy** (`src/sprite/proxy.mjs`): a Sprite service behind the Sprite's one public port. It lives outside the site, so an edit to the site cannot remove the chat. When Vite is down it serves a page that still has the chat, so the visitor can ask the agent to fix it.
+- **Widget** (`src/widget`): a React app with its own CSS in a shadow DOM, built to one `widget.js`. It keeps the conversation and the Claude Code session id in `localStorage`, because Vite sometimes reloads the whole page after an edit.
+  - **Placement** (`placement.ts`): the site marks where the chat goes with `<ChatSlot />` (`apps/self-editing/src/components/chat-slot.tsx`), which renders a `div[data-aitink-slot]`. The widget moves its host element into that slot and fills it; with no slot it floats in the corner behind an "Edit this site" launcher. A mutation observer re-places it when the site adds, removes, or re-renders the slot, so a React remount or an edit that deletes the slot cannot lose the chat or its draft. `ChatSlot` adds the marker only after React has mounted, so the widget never touches server-rendered markup before hydration.
+- **Agent**: Claude Code (`claude`, preinstalled on Sprites) with `anthropic/claude-haiku-5.5`. Its `ANTHROPIC_BASE_URL` is the Sprites gateway for the OpenRouter connector, so the Sprite never holds a key. The adapter runs it with `bypassPermissions`; the Sprite is the isolation boundary. It reads `AGENTS.md` in the site first.
 
-The loop: the agent edits files in `apps/self-editing`, and Vite hot reloads the page the visitor is chatting on.
+## Access and trust
 
-## Dependencies
-
-TanStack AI packages come from the open [TanStack/ai PR #1555](https://github.com/TanStack/ai/pull/1555) through pkg.pr.new at commit `5cc000e`: `@tanstack/ai`, `ai-harness`, `ai-persistence`, `ai-react`, and `openai-base`. The previews depend on matching preview packages, so `pnpm-workspace.yaml` sets `blockExoticSubdeps: false`. The PR is large and still changing; check its compatibility table before moving the pin.
+- **Sprite URLs are private to your Fly org.** Only members logged in to Fly can open them. That is why the first version is for the owner only.
+- **Widget token:** `HMAC-SHA256(TOKEN_SECRET, "widget:" + spriteName)`, baked into the injected `<script>` tag. `POST /api/chat` needs `Authorization: Bearer <token>`, an `X-Sprite` header, and an `Origin` that is that Sprite's own `https://<name>-<org>.sprites.app`. CORS allows only such origins.
+- **Model key:** a Sprites connector (`lnJFr15GNm0eu22128A3lg`, OpenRouter) holds it. Its access policy admits only Sprites named `ai-tink-*`. The Sprite calls `https://api.sprites.dev/v1/gateway/openrouter/<id>/v1/messages` with no credentials.
+- **The agent can do anything on its own Sprite**, including read the widget token, change the services, and use `sudo` (passwordless on Sprites). It cannot reach other Sprites or the host's secrets. A broken Sprite is repaired with "Reset".
 
 ## Fragile points
 
-These come from running everything in one process:
-
-1. **The agent can break its own chat.** The chat UI is in `index.tsx`, the main file the agent edits. Only the system prompt asks it to keep the chat working. A compile error in that file removes the chat.
-2. **Server edits restart the agent.** Editing `agent.server.ts` or `api.chat.ts` reloads server modules, which loses the in-memory session and can cut off the response being streamed.
-3. **Tools act on the local filesystem.** `workspaceTools` reads and writes files and runs shell commands directly. Drop is the only isolation.
-4. **One process holds everything.** The API key, model calls, and editable code share a process. Inside Drop that is acceptable; in a hosted sandbox the agent could read the key.
-
-[hosting-plan.md](hosting-plan.md) describes the split that removes points 1, 2, and 4.
+1. **The TanStack Sprites provider is slow.** Every process call and `mkdir`, `remove`, `rename`, `exists` waits about 11 s, because the provider waits for the exec socket to close and the server keeps it open that long after the exit frame. `sandbox.ts` replaces them with `@fly/sprites` calls. A chat run went from 64 s to 11 s. The upstream fix is to resolve on the exit frame.
+2. **Sprite names.** `defineSandbox` names new Sprites with a bare hash, which the connector's `ai-tink-` prefix would deny. The host never lets the framework create a Sprite; `sandbox.ts` attaches to the one the host made.
+3. **The agent can break its own site**, and a syntax error shows the fallback page. Deleting `<ChatSlot />` only moves the chat to the corner. The agent cannot easily break the chat itself, but it can with `sprite-env` or `sudo`. Reset restores both.
+4. **Host state is in memory:** setup progress, the one-run-at-a-time set, and the hourly counters. Fly stops an idle host; a restart clears them. Sprites and their sessions are not affected.
+5. **No cleanup of Sprites yet,** and no per-visitor limit on how many Sprites can be made. Only the owner can enter.
+6. **The widget's first load needs the host awake.** A stopped Fly machine starts in a few seconds.
