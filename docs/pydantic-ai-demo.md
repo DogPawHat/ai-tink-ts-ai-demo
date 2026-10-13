@@ -1,6 +1,6 @@
 # Pydantic AI demo
 
-Status: planned, not started.
+Status: first version built in `apps/pydantic-agui` (2026-10-13). Verified against the live Zen model (`deepseek-v4.1-flash`) through the Vite proxy and a browser: tool calls and the final answer stream to the client. Not deployed.
 
 ## Goal
 
@@ -8,24 +8,34 @@ Show the TanStack AI client libraries (`@tanstack/ai-client`, `@tanstack/ai-reac
 
 ## Approach
 
-TanStack AI clients speak the [AG-UI](https://docs.ag-ui.com/) protocol. A server accepts a `RunAgentInput` by POST and streams AG-UI events as server-sent events. Pydantic AI supports AG-UI, so a FastAPI app can expose a Pydantic AI agent as an AG-UI endpoint. **Unverified:** confirm the current Pydantic AI AG-UI API before building.
+TanStack AI clients speak the [AG-UI](https://docs.ag-ui.com/) protocol. A server accepts a `RunAgentInput` by POST and streams AG-UI events as server-sent events. Pydantic AI supports AG-UI, so a FastAPI app can expose a Pydantic AI agent as an AG-UI endpoint. **Verified 2026-10-13** with `pydantic-ai-slim` 2.55.0: install the `ag-ui` extra and call `AGUIAdapter.dispatch_request(request, agent=agent, model=...)` from `pydantic_ai.ui.ag_ui` in a FastAPI route. The body that `fetchServerSentEvents` sends (a `RunAgentInput` plus an extra `data` field) is accepted, and the response is `text/event-stream` with `RUN_STARTED`, `TOOL_CALL_*`, `TEXT_MESSAGE_*`, and `RUN_FINISHED` events.
 
 Reference: `~/Development/ai/examples/ag-ui` in the TanStack AI checkout. It is a React client that talks to hand-written AG-UI servers in Go, Rust, PHP, Zig, Bash, and Python. This demo replaces the hand-written Python server with Pydantic AI, so it can show agent features: tools, typed output, and possibly client-side tools or approval interrupts.
 
-## Proposed layout
+## Layout
 
 ```
-apps/pydantic-agui/   # frontend (TanStack Start or a Vite SPA; undecided)
+apps/pydantic-agui/   # frontend: TanStack Start in SPA mode
   server/             # FastAPI + Pydantic AI, managed with uv
 ```
+
+Dev ports: client 3200, server 8010. Vite proxies `/api/agent` to the server root. The client uses released `@tanstack/ai-react` 0.30.3 and `@tanstack/ai` 0.68.0, not the PR #1555 preview that `apps/self-editing` pins. See the app's README for commands.
+
+The server module sets no model on the agent. `create_app` takes a model factory, and the default builds an OpenCode Zen model from `OPENCODE_API_KEY`. Tests pass `TestModel`, so they need no key.
 
 Deploy the frontend and the FastAPI server as Fly apps (see [hosting-plan.md](hosting-plan.md)).
 
 ## Undecided
 
-- Frontend framework: TanStack Start, to match `apps/self-editing`, or a Vite SPA, closer to the upstream example.
-- Model provider for the Python agent: OpenCode Zen through an OpenAI-compatible provider, or another provider.
-- How Vite+ runs the Python server. `vp run` tasks can run any command, so a `package.json` script that calls `uv` may be enough.
+Decided: TanStack Start in SPA mode for the frontend, OpenCode Zen for the model, and a `package.json` script (`dev:server`, wrapped in `varlock run`) to start the Python server. Python is not linted or type checked by `vp check`.
+
+## Not yet done
+
+- The preview browser in the agent host could not reach the dev server, so browser checks used a local Playwright Chromium.
+- The UI ignores the reasoning events the live model sends; it renders only text and tool calls.
+- Typed output, client-side tools, and approval interrupts.
+- Deployment to Fly.
+- Python lint and type checking (for example `ruff`).
 
 ## Possible third demo
 
@@ -33,3 +43,7 @@ Not decided. Candidates that show something the other two do not:
 
 - Generative UI or client-side tools.
 - Durable chats with `@tanstack/ai-persistence` and the durable-stream packages, where a chat survives a server restart. The hosted self-editing demo needs this anyway.
+
+## Credentials
+
+The server reuses the key from `apps/self-editing`. `apps/pydantic-agui/.env.local` is a copy of that app's Varlock-encrypted `.env.local`. The `linux-tpm` encryption key is machine-wide, so the copy decrypts here without re-encrypting. It is git-ignored; copy it again if the key changes. Decryption needs the `tss` group (see [development.md](development.md)): `sg tss -c 'vp run dev:server'`.
