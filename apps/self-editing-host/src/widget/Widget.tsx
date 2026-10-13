@@ -47,7 +47,8 @@ function load(key: string): Stored {
   } catch {
     // A missing or corrupt entry starts a fresh conversation.
   }
-  return { open: false, messages: [] };
+  // A first visit opens the panel: a collapsed button in the corner is easy to miss.
+  return { open: true, messages: [] };
 }
 
 export function Widget({ host, sprite, token }: WidgetConfig) {
@@ -124,6 +125,7 @@ export function Widget({ host, sprite, token }: WidgetConfig) {
       <div className="root">
         <button className="launcher" aria-label="Open the site agent" onClick={() => setOpen(true)}>
           {BUBBLE}
+          <span>Edit this site</span>
         </button>
       </div>
     );
