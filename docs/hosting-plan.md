@@ -30,6 +30,7 @@ Built as `apps/self-editing-host` (the Fly app `ai-tink-host`) plus a chat-less 
 - **The host replaces the Sprites provider's process and file calls.** Each call waited about 11 s. See the architecture doc's Fragile points.
 - **Setup takes 25 to 30 s,** not minutes: upload a 34 KB template, install pnpm and 295 packages, start two services. No pool of prepared Sprites is needed at this size.
 - **The widget is plain React with handwritten CSS in a shadow DOM,** not the shadcn and AI Elements chat components. That avoids Tailwind inside a shadow root and keeps the bundle at 435 KB (126 KB gzipped).
+- **The chat renders inside the page.** The site marks a slot with `<ChatSlot />` and the injected widget fills it; it floats in the corner when there is no slot. It is still the proxy-injected widget, so a bad edit cannot remove it.
 - **Chat history across reloads** is kept in the widget's `localStorage` plus the Claude Code session id, which lives on the Sprite. The host has no database.
 
 Verified on the deployed host with a real browser (Playwright's Chromium): the widget loads on the Sprite's page, a prompt changes the page heading live through hot reload in about 12 s, the conversation survives a reload, and "Reset" restores the template in about 15 s. Also verified with curl: wrong token 401, wrong origin 403, CORS preflight echoes the Sprite's origin only.

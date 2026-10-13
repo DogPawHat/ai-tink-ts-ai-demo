@@ -1,8 +1,18 @@
 :host {
   all: initial;
 }
+/* In the site's chat slot the widget fills it instead of floating. */
+:host([data-mode="inline"]) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 * {
   box-sizing: border-box;
+}
+.mount {
+  width: 100%;
+  height: 100%;
 }
 .root {
   position: fixed;
@@ -15,6 +25,16 @@
     "Segoe UI",
     sans-serif;
   color: #1c1c1e;
+}
+.root.inline {
+  position: static;
+  width: 100%;
+  height: 100%;
+}
+.root.inline .panel {
+  width: 100%;
+  height: 100%;
+  box-shadow: none;
 }
 .launcher {
   width: 52px;

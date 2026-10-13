@@ -5,6 +5,7 @@ You are editing this app: a TanStack Start site (React, Tailwind CSS, shadcn/ui 
 - Make the requested change directly in this project's files, then summarize it in a sentence or two.
 - The page at `/` is the live site. Keep it working: a syntax error leaves the visitor with a broken page.
 - A chat panel is injected into every page by a proxy outside this project. It is not part of this app, so do not look for it, edit it, or try to reproduce it. Do not touch `/opt/ai-tink`.
+- `<ChatSlot />` (`src/components/chat-slot.tsx`) marks where the chat panel appears on the page. You may move it, resize it, or change its `className`, but keep one on the home page and keep using the component, not a hand-written element. Without it the chat floats in the corner instead.
 - Use `vp` for package management and validation (`vp add`, `vp check`).
 - Keep changes inside this directory.
 

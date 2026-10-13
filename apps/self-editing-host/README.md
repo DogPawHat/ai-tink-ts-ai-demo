@@ -6,7 +6,7 @@ Live at <https://ai-tink-host.fly.dev> (Fly app `ai-tink-host`, org `personal`, 
 
 ## Use it
 
-Open `https://ai-tink-host.fly.dev/?key=<ACCESS_KEY>` while logged in to Fly as a member of the org. The first visit sets up a Sprite (about 30 s), then redirects to its URL. Sprite URLs are private to the org, so only org members can open them. A cookie keeps the same Sprite for the next visit. Open the chat with the round button; "Reset" restores the site to the template.
+Open `https://ai-tink-host.fly.dev/?key=<ACCESS_KEY>` while logged in to Fly as a member of the org. The first visit sets up a Sprite (about 30 s), then redirects to its URL. Sprite URLs are private to the org, so only org members can open them. A cookie keeps the same Sprite for the next visit. The chat panel sits beside the live site. If you remove the slot from the page, it floats in the corner behind an "Edit this site" button. "Reset" restores the site to the template. An existing Sprite keeps the template it started from, so use "Reset" to pick up a newer one.
 
 ## Environment
 
@@ -39,7 +39,7 @@ To run it locally, set the variables above (`PUBLIC_URL` as `http://localhost:87
 
 - `src/server/` - the HTTP server (`index.ts`), Sprite setup (`sprites.ts`), the sandbox adapter for the chat (`sandbox.ts`), the chat endpoint and its auth (`chat.ts`), token helpers (`auth.ts`), config, and the landing pages.
 - `src/sprite/proxy.mjs` - runs on each Sprite behind its one public port: forwards to Vite, passes the HMR WebSocket through, injects the widget tag, and serves a fallback page when the site is down.
-- `src/widget/` - the chat widget: a React app with its own CSS in a shadow DOM, built to one `widget.js`.
+- `src/widget/` - the chat widget: a React app with its own CSS in a shadow DOM, built to one `widget.js`. `placement.ts` puts it in the site's `<ChatSlot />` when there is one, and in the corner otherwise.
 - `scripts/pack-site.mjs` - packs `apps/self-editing` into `dist/site.tgz`.
 
 ## Operating notes

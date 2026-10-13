@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { keepPlaced } from "./placement";
 import { Widget } from "./Widget";
 import css from "./style.css?inline";
 
@@ -15,7 +16,10 @@ if (host && sprite && token && !document.getElementById("aitink-widget")) {
   const style = document.createElement("style");
   style.textContent = css;
   const mount = document.createElement("div");
+  mount.className = "mount";
   shadow.append(style, mount);
   document.body.append(element);
+  // Inside the site's chat slot when it has one, floating in the corner when it does not.
+  keepPlaced(element);
   createRoot(mount).render(<Widget host={host} sprite={sprite} token={token} />);
 }

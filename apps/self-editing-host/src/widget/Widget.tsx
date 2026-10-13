@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
+import { getMode, subscribeMode } from "./placement";
 
 export interface WidgetConfig {
   host: string;
@@ -54,7 +55,11 @@ function load(key: string): Stored {
 export function Widget({ host, sprite, token }: WidgetConfig) {
   const storageKey = `aitink:${sprite}`;
   const initial = useMemo(() => load(storageKey), [storageKey]);
-  const [open, setOpen] = useState(initial.open);
+  const [openPreference, setOpen] = useState(initial.open);
+  // In the site's chat slot the panel is always shown; the open/closed choice only
+  // applies to the floating launcher, and comes back if the slot goes away.
+  const inline = useSyncExternalStore(subscribeMode, getMode) === "inline";
+  const open = inline || openPreference;
   const [draft, setDraft] = useState("");
   const [sessionId, setSessionId] = useState<string | undefined>(initial.sessionId);
   const [resetting, setResetting] = useState(false);
@@ -76,11 +81,14 @@ export function Widget({ host, sprite, token }: WidgetConfig) {
   // Vite reloads the whole page after some edits, so keep the conversation.
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify({ open, sessionId, messages }));
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ open: openPreference, sessionId, messages }),
+      );
     } catch {
       // Storage may be full or blocked; the chat still works.
     }
-  }, [storageKey, open, sessionId, messages]);
+  }, [storageKey, openPreference, sessionId, messages]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -132,7 +140,7 @@ export function Widget({ host, sprite, token }: WidgetConfig) {
   }
 
   return (
-    <div className="root">
+    <div className={`root${inline ? " inline" : ""}`}>
       <div className="panel" role="dialog" aria-label="Site agent">
         <div className="header">
           <span className={`dot${isLoading ? " busy" : ""}`} />
@@ -145,9 +153,11 @@ export function Widget({ host, sprite, token }: WidgetConfig) {
           >
             Reset
           </button>
-          <button className="iconbtn" onClick={() => setOpen(false)} aria-label="Close">
-            ✕
-          </button>
+          {!inline && (
+            <button className="iconbtn" onClick={() => setOpen(false)} aria-label="Close">
+              ✕
+            </button>
+          )}
         </div>
         <div className="messages">
           {messages.length === 0 && (

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Code2Icon, SparklesIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ChatSlot } from "@/components/chat-slot";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 export const Route = createFileRoute("/")({ component: Home });
@@ -8,7 +9,7 @@ export const Route = createFileRoute("/")({ component: Home });
 function Home() {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <header className="mb-8 flex flex-col gap-5 border-b pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-3">
             <Badge variant="secondary" className="gap-1.5">
@@ -27,28 +28,34 @@ function Home() {
           </Badge>
         </header>
 
-        <Card className="relative min-h-[420px] overflow-hidden bg-gradient-to-br from-card via-muted/60 to-accent/70 lg:min-h-[560px]">
-          <CardHeader className="relative z-10 flex flex-row items-center justify-between">
-            <Badge variant="outline" className="bg-background/80">
-              Live site
-            </Badge>
-            <Code2Icon className="size-4 text-muted-foreground" aria-hidden="true" />
-          </CardHeader>
-          <CardContent className="relative z-10 flex flex-1 flex-col justify-center gap-5 px-8 pb-12 sm:px-12">
-            <div className="flex size-16 items-center justify-center rounded-2xl border bg-background/85 shadow-sm">
-              <SparklesIcon className="size-8 text-primary" aria-hidden="true" />
-            </div>
-            <div className="max-w-lg space-y-4">
-              <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-                Your next idea starts here.
-              </h2>
-              <p className="text-base leading-relaxed text-muted-foreground">
-                Try a new color, layout, or look. This page is the agent&apos;s workspace.
-              </p>
-            </div>
-          </CardContent>
-          <div className="pointer-events-none absolute -right-24 -bottom-32 size-96 rounded-full bg-primary/5 blur-3xl" />
-        </Card>
+        <section
+          className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(380px,1fr)]"
+          aria-label="Live site and chat"
+        >
+          <Card className="relative min-h-[420px] overflow-hidden bg-gradient-to-br from-card via-muted/60 to-accent/70 lg:min-h-[680px]">
+            <CardHeader className="relative z-10 flex flex-row items-center justify-between">
+              <Badge variant="outline" className="bg-background/80">
+                Live site
+              </Badge>
+              <Code2Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+            </CardHeader>
+            <CardContent className="relative z-10 flex flex-1 flex-col justify-center gap-5 px-8 pb-12 sm:px-12">
+              <div className="flex size-16 items-center justify-center rounded-2xl border bg-background/85 shadow-sm">
+                <SparklesIcon className="size-8 text-primary" aria-hidden="true" />
+              </div>
+              <div className="max-w-lg space-y-4">
+                <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+                  Your next idea starts here.
+                </h2>
+                <p className="text-base leading-relaxed text-muted-foreground">
+                  Try a new color, layout, or look. This page is the agent&apos;s workspace.
+                </p>
+              </div>
+            </CardContent>
+            <div className="pointer-events-none absolute -right-24 -bottom-32 size-96 rounded-full bg-primary/5 blur-3xl" />
+          </Card>
+          <ChatSlot className="h-[560px] min-h-0 lg:h-[680px]" />
+        </section>
       </div>
     </main>
   );
