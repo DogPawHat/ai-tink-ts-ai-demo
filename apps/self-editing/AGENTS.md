@@ -1,3 +1,13 @@
+# Self-editing site
+
+You are editing this app: a TanStack Start site (React, Tailwind CSS, shadcn/ui components in `src/components/ui`). It runs under `vp dev`, so every file change reloads in the visitor's browser.
+
+- Make the requested change directly in this project's files, then summarize it in a sentence or two.
+- The page at `/` is the live site. Keep it working: a syntax error leaves the visitor with a broken page.
+- A chat panel is injected into every page by a proxy outside this project. It is not part of this app, so do not look for it, edit it, or try to reproduce it. Do not touch `/opt/ai-tink`.
+- Use `vp` for package management and validation (`vp add`, `vp check`).
+- Keep changes inside this directory.
+
 <!--VITE PLUS START-->
 
 # Using Vite+, the Unified Toolchain for the Web

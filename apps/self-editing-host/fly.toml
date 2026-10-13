@@ -1,0 +1,24 @@
+app = "ai-tink-host"
+primary_region = "lhr"
+
+[env]
+PORT = "8080"
+PUBLIC_URL = "https://ai-tink-host.fly.dev"
+GATEWAY_URL = "https://api.sprites.dev/v1/gateway/openrouter/lnJFr15GNm0eu22128A3lg"
+AGENT_MODEL = "anthropic/claude-haiku-5.5"
+
+[http_service]
+internal_port = 8080
+force_https = true
+auto_stop_machines = "stop"
+auto_start_machines = true
+min_machines_running = 0
+
+[http_service.concurrency]
+type = "requests"
+soft_limit = 25
+hard_limit = 50
+
+[[vm]]
+size = "shared-cpu-1x"
+memory = "512mb"

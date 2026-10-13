@@ -1,6 +1,6 @@
 # Hosting plan for the self-editing demo
 
-Status: planned. Decided 2026-10-12. The infrastructure spike passed on 2026-10-13; see [Spike results](#spike-results).
+Status: **first version built and deployed on 2026-10-13**, for the owner only. See [Implementation](#implementation-2026-10-13). Decided 2026-10-12; the spikes that de-risked it are recorded below.
 
 ## Goal
 
@@ -19,6 +19,22 @@ Reasons:
 - Checkpoints are fast copy-on-write snapshots of the writable filesystem. Restoring a clean checkpoint gives a "reset" for a broken site.
 - TanStack AI has a Sprites provider, `@tanstack/ai-sandbox-sprites`.
 - A FastAPI backend deploys the same way as the JavaScript apps.
+
+## Implementation (2026-10-13)
+
+Built as `apps/self-editing-host` (the Fly app `ai-tink-host`) plus a chat-less `apps/self-editing` site. [`self-editing-architecture.md`](self-editing-architecture.md) describes how it works; the host's README has the environment variables and deploy command. The design below was followed, with these differences:
+
+- **The agent runs on the Sprite, not outside it.** The plan assumed the native harness with remote tools. It was replaced by Claude Code running on the Sprite through the TanStack Claude Code adapter (spikes 2 to 4). The model key still stays off the Sprite: Claude Code calls an OpenRouter connector through the Sprites gateway.
+- **First version is private.** Sprite URLs stay org-private, and the landing page needs `?key=<ACCESS_KEY>`. No invite codes, no public traffic.
+- **The proxy is a root-owned file, but not a boundary.** Sprites give the `sprite` user passwordless `sudo`, and the agent can use `sprite-env` to replace services, so it can break its own chat. "Reset" repairs that.
+- **The host replaces the Sprites provider's process and file calls.** Each call waited about 11 s. See the architecture doc's Fragile points.
+- **Setup takes 25 to 30 s,** not minutes: upload a 34 KB template, install pnpm and 295 packages, start two services. No pool of prepared Sprites is needed at this size.
+- **The widget is plain React with handwritten CSS in a shadow DOM,** not the shadcn and AI Elements chat components. That avoids Tailwind inside a shadow root and keeps the bundle at 435 KB (126 KB gzipped).
+- **Chat history across reloads** is kept in the widget's `localStorage` plus the Claude Code session id, which lives on the Sprite. The host has no database.
+
+Verified on the deployed host with a real browser (Playwright's Chromium): the widget loads on the Sprite's page, a prompt changes the page heading live through hot reload in about 12 s, the conversation survives a reload, and "Reset" restores the template in about 15 s. Also verified with curl: wrong token 401, wrong origin 403, CORS preflight echoes the Sprite's origin only.
+
+Not built yet: invite codes or any public access, cleanup of abandoned Sprites, a limit on Sprites per visitor, the upstream fix for the provider latency, and a dedicated Sprites token for the host (it uses the CLI's token).
 
 ## Design: serve the site from the Sprite, run the agent outside it
 
