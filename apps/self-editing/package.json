@@ -18,7 +18,7 @@
     "@streamdown/math": "^1.0.2",
     "@streamdown/mermaid": "^1.0.2",
     "@tanstack/ai": "^0.68.0",
-    "@tanstack/ai-opencode": "^0.4.19",
+    "@tanstack/ai-claude-code": "^0.8.1",
     "@tanstack/ai-react": "^0.30.3",
     "@tanstack/ai-sandbox": "^0.5.22",
     "@tanstack/ai-sandbox-local-process": "^0.2.6",

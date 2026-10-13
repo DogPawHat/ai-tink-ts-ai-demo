@@ -24,14 +24,14 @@ The pre-commit hook runs `vp staged`, which runs `vp check --fix` on staged file
 
 ## Secrets: Varlock and the TPM
 
-`apps/self-editing/.env.schema` declares configuration. The git-ignored `apps/self-editing/.env.local` holds `OPENCODE_API_KEY`, encrypted with Varlock's local encryption on the `linux-tpm` backend.
+`apps/self-editing/.env.schema` declares configuration. The git-ignored `apps/self-editing/.env.local` holds `OPENROUTER_API_KEY`, encrypted with Varlock's local encryption on the `linux-tpm` backend.
 
 Loading the Vite config runs the Varlock plugin, so `vp check`, `vp build`, `vp dev`, and the pre-commit hook all need to decrypt the key. Decryption needs access to `/dev/tpmrm0`, which belongs to the `tss` group.
 
 - On this machine the user is in `tss`, but processes started before the user was added do not have the group. Symptom: `Decryption failed ... Backend: linux-tpm (file-based)`. Check with `id`; group 103 (`tss`) should be listed.
 - Fix it for one command with `sg tss -c '<command>'`. Restarting the agent host or logging in again fixes it for good.
 - `sg` runs the command through the login shell, which is fish here. Fish does not support heredocs, so pass commit messages with `git commit -F <file>`, not `<<EOF`.
-- For checks that do not need the real key, `OPENCODE_API_KEY=placeholder vp check` gets past Varlock.
+- For checks that do not need the real key, `OPENROUTER_API_KEY=placeholder vp check` gets past Varlock.
 - Run `vp exec varlock load --agent` from `apps/self-editing` for a redacted view of loaded values.
 
 ## Drop
@@ -41,7 +41,7 @@ Loading the Vite config runs the Varlock plugin, so `vp check`, `vp build`, `vp 
 - the repository root read-only, so the agent can read shared config and `node_modules` but cannot change other apps;
 - `apps/self-editing` read-write.
 
-`OPENCODE_MODEL` and `OPENCODE_API_KEY` are listed in `[environ].exposed_vars`. `apps/self-editing/scripts/drop.sh` derives the environment ID from the repository root, because it runs from the app directory and Drop would otherwise derive a different ID from the working directory. Renaming or moving the repository changes that ID.
+`AGENT_MODEL`, `OPENROUTER_API_KEY`, and `OPENROUTER_BASE_URL` are listed in `[environ].exposed_vars`. `apps/self-editing/scripts/drop.sh` derives the environment ID from the repository root, because it runs from the app directory and Drop would otherwise derive a different ID from the working directory. Renaming or moving the repository changes that ID.
 
 From `apps/self-editing`: `vp run setup:drop` checks the mounted Vite+ toolchain, and `vp run dev:drop` starts the app on `127.0.0.1:3000`.
 
@@ -53,3 +53,5 @@ The machine is `dogpawbot.taildd39d.ts.net`, and the self-editing Vite config al
 
 - `~/Development/ai`: a TanStack AI checkout last synced 2026-09-22. It predates the native harness in PR #1555, which this app no longer uses. It has the sandbox packages (`packages/ai-sandbox*`) and examples referenced in the other docs (`examples/ag-ui`, `examples/sandbox-cloudflare`, `examples/sandbox-web`).
 - `flyctl` is installed at `~/.fly/bin` and logged in. The `sprite` CLI (v0.0.1-rc48) is installed at `~/.local/bin/sprite` and authenticated to the `ciaran-curley` org through the flyctl session. Pass `-o ciaran-curley` to commands. Its token is stored unencrypted in `~/.sprites/keyring/`.
+
+`apps/self-editing/scripts/drop.sh setup` installs `@anthropic-ai/claude-code` into the Drop home and fails in a git worktree whose path differs from the main checkout, because the environment ID comes from the repository path. Run its command against the real environment by hand: `drop run -e home-dogpawhat-Development-ai-tink-ts-ai-demo --mount ~/.local/share/vite-plus bash -c 'npm install --prefix "$HOME/.local" -g --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code'`.

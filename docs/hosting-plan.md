@@ -87,7 +87,7 @@ Things learned:
 
 - Sprites are Linux VMs with a services runtime, not Docker images. Create the long-running processes with `sprite-env services create ... --http-port 8080`, which restarts them after a cold boot and starts them on an incoming request. A process started by hand does not survive a cold boot.
 - The URL is org-private by default (Bearer token). `sprite config update --url-auth public` made it public for the test; visitor Sprites will need that, so the Sprite must never hold secrets.
-- `sprite create` prints success and then hangs when run without a TTY. Run it under `timeout`, or create Sprites through the API or the `@tanstack/ai-sandbox-sprites` provider instead.
+- `sprite create` opens a console after creating the Sprite, which hangs without a TTY. Pass `--skip-console` (and `--label <label>`, repeatable, for connector access policies), or create Sprites through the API or the `@tanstack/ai-sandbox-sprites` provider.
 - `sprite org auth` reused the `flyctl` login and stored an API token unencrypted in `~/.sprites/keyring/`, because no system keyring is available.
 - Vite needed `server.allowedHosts: true` (or the Sprite hostname). The real app's `allowedHosts` is currently the Tailscale name.
 - The Sprite edge forwards to one HTTP port, so the proxy on :8080 must be the only public listener.
@@ -134,7 +134,67 @@ Differences from the plan above, all **unverified**:
 
 ### Decision (2026-10-13)
 
-The app goes back to OpenCode, as in its first version, on published packages (`@tanstack/ai-opencode`, `ai-sandbox`, `ai-sandbox-local-process`). The code change is done for the local Drop setup. Hosting on Sprites is still planned: the sandbox provider becomes `spritesSandbox()`, and the open points above (model key, single public port for `opencode serve`) are still unresolved. The design near the top of this doc assumes the agent runs outside the Sprite; with OpenCode it runs inside, so revise that section when the Sprites spike is done.
+The app first went back to OpenCode on published packages (`@tanstack/ai-opencode`, `ai-sandbox`, `ai-sandbox-local-process`). After spikes 2 to 4 it moved to Claude Code (`@tanstack/ai-claude-code`) with `anthropic/claude-haiku-5.5` through OpenRouter. The code change is done for the local Drop setup; the app reads `OPENROUTER_API_KEY` and `OPENROUTER_BASE_URL`, and the base URL can point at the Sprites gateway. The OpenCode paragraphs below are kept for the record. Hosting on Sprites is still planned: the sandbox provider becomes `spritesSandbox()`. Spike 2 settled the model key (an OpenRouter connector works) but not the exposed, unauthenticated `opencode serve` on the single public port; see blockers 3 and 4 above. The design near the top of this doc assumes the agent runs outside the Sprite; with OpenCode it runs inside, so revise that section when the Sprites spike is done.
+
+### Spike 2: OpenCode on a Sprite through an OpenRouter connector (2026-10-13)
+
+Ran against the real published packages, `@tanstack/ai` 0.68.0, `ai-sandbox` 0.5.22, `ai-sandbox-sprites` 0.2.5, and `ai-opencode` 0.4.19, with OpenCode 1.19.0 on the Sprite. Throwaway Sprites, all destroyed afterwards. The OpenRouter connector `lnJFr15GNm0eu22128A3lg` is an API-key connector with the access policy `{"name_prefix": "ai-tink-"}`. It stays in the org.
+
+What worked:
+
+- **Connector:** a Sprite named `ai-tink-*` called `https://api.sprites.dev/v1/gateway/openrouter/<id>/v1/chat/completions` with no credentials and got `anthropic/claude-haiku-5.5` replies (about $0.000004 for a 6-token reply). `GET …/v1/models` lists 461 models. The Sprite's environment holds no key.
+- **OpenCode config:** an `opencode.json` in the workspace sets `provider.openrouter.options.baseURL` to the gateway URL and `apiKey` to a placeholder. Also set `small_model`; otherwise OpenCode picked `google/gemini-nano-banana-2.1` for session titles.
+- **The real adapter:** `chat({ adapter: opencodeText('openrouter/anthropic/claude-haiku-5.5', { permissionMode: 'acceptEdits', directory: '/workspace', port: 8080 }), middleware: [withSandbox(...)] })` with `spritesSandbox()` streamed `RUN_STARTED`, an OpenCode `write` tool call and its result, then `RUN_FINISHED`, and the file existed on the Sprite. The first TEXT_MESSAGE in the stream was an echo of the user's prompt, and no assistant reply text appeared; seen once, not investigated.
+- **Timing:** about 134 s from `chat()` start to `RUN_STARTED` on a fresh Sprite (create, workspace setup, `npm install` of `opencode-ai`, server start), then 6 s for the run. A reused Sprite should skip most of that; not measured.
+
+What had to be worked around or still blocks hosting:
+
+1. **Sprite names.** `defineSandbox` passes a 16-character hash as the Sprite name (`computeSandboxKey`), so the connector's `ai-tink-` prefix would deny it. The spike wrapped the provider: `Object.create(provider)` with `create = (input) => provider.create({ ...input, id: 'ai-tink-' + input.id })`. The provider has no label option, so a label policy would need the same kind of wrapper or Sprites created outside the framework and attached with `resume`.
+2. **OpenCode is not preinstalled** on a fresh Sprite (`opencode: command not found`). Install it in the workspace `setup` (`npm install --prefix "$HOME/.local" -g --allow-scripts=opencode-ai opencode-ai`), or bake it into a checkpoint.
+3. **The agent server is exposed with no authentication.** The adapter runs `opencode serve` inside the Sprite and the host connects through the Sprite URL. `ports.connect(port)` rejects any port except the Sprite's `httpPort`, and the provider makes the URL public by default (`urlAuth: 'public'`). OpenCode warns "OPENCODE_SERVER_PASSWORD is not set; server is unsecured". With the server started by hand on :8080, an unauthenticated `GET /session` on the public URL returned existing sessions and an unauthenticated `POST /session` created one. Anyone who learns the URL during a run can drive the agent, which can run commands. The adapter sends only the headers that `ports.connect` returns and sets no password.
+4. **The one public port is taken twice.** The visitor-facing site proxy needs :8080 and the host's agent channel needs :8080. Possible fixes, none tried: route a secret `/__agent/` path on the site proxy to `opencode serve` and set `OPENCODE_SERVER_PASSWORD`, which needs a handle wrapper to return the matching `Authorization` header from `ports.connect`; or use `urlAuth: 'sprite'` so the host reaches it with the org token, which makes the visitor site private.
+5. **Harnesses that avoid the port:** pi over ACP works (spike 3). Claude Code, Codex, and Grok Build run through `exec` and need no port, but they need that vendor's key. Whether a Sprites connector exists for them was not checked.
+6. **`opencode run` (CLI)** waits for stdin EOF when it is not on a TTY (`</dev/null` fixes it). The adapter uses `opencode serve`, so this affects only manual testing.
+
+### Spike 3: pi over ACP on a Sprite (2026-10-13)
+
+Same connector and prefix policy as spike 2; packages `@tanstack/ai-acp` 0.3.24, `ai-sandbox` 0.5.22, `ai-sandbox-sprites` 0.2.5, and `@fly/sprites` 0.2.3. Throwaway Sprites, destroyed afterwards. **Result: it works, and it avoids both blockers from spike 2.**
+
+- **pi:** `pi` 0.84.4 (`@earendil-works/pi-coding-agent`) is preinstalled on Sprites. It has no `--acp` flag; the docs' `pi --acp` example is a placeholder. It has `--mode rpc`, `--mode json`, and `-p`.
+- **ACP adapter:** the third-party npm package `pi-acp` (0.0.34, listed on the official ACP agents page) speaks ACP over stdio and spawns `pi --mode rpc`. It is not preinstalled; install it in the workspace `setup` with `npm install --prefix "$HOME/.local" -g pi-acp`.
+- **Model through the connector:** `~/.pi/agent/models.json` declares a provider with `baseUrl` set to the gateway URL, `api: "openai-completions"`, a placeholder `apiKey`, and the model id. `~/.pi/agent/settings.json` sets `defaultProvider` and `defaultModel`. `pi -p --no-session` then edited a file in 7 s (run it with `</dev/null`). The Sprite holds no key.
+- **Transport:** `acpCompatible` defaults to ACP over stdio, and `resolveAcpTransportMode` refuses it on Sprites because the provider declares `writableStdin: false`. The fallback WebSocket transport would need a port and an in-sandbox WebSocket server. The workaround is the adapter's `openTransport` hook: build a `SpriteCommand` from `@fly/sprites` (its `spawn()` has a writable stdin), `await cmd.start()`, and return `{ kind: 'stdio', process: <SpawnHandle wrapper> }`. Without the `await start()`, the first ACP write fails with `WebSocket not open`.
+- **The run:** `chat({ adapter: acpCompatible({ name: 'pi', authMode: 'host', openTransport })('anthropic/claude-haiku-5.5'), middleware: [withSandbox(...)] })` streamed `RUN_STARTED`, an `edit` tool call and its result, the assistant's reply text in chunks, and `RUN_FINISHED`. The file existed on the Sprite. About 121 s from `chat()` to `RUN_STARTED` on a fresh Sprite (create, `pi-acp` install, config), then about 6 s for the run.
+- **Why it fits the hosting plan:** the agent talks over the exec WebSocket, which the org token authenticates, so nothing listens on a port. The provider was created with `urlAuth: 'sprite'`; an anonymous request to the Sprite URL gets a 302 to login. The single public port stays free for the visitor site proxy. The Sprite had no key-like environment variables and no leaked processes after the run.
+
+Caveats, not verified or not fixed:
+
+- The first text message in the stream was pi's "New version available" banner, which `pi-acp` forwards as agent text even with `quietStartup: true` set.
+- The model came from pi's settings; I did not check whether the adapter's model argument reaches pi.
+- `pi-acp` is a third-party 0.0.x package and says it is "MVP-style". pi has no built-in sandbox (see its `docs/security.md`), so the Sprite is the only boundary.
+- `@fly/sprites` needs Node 24 or newer on the host, and the host needs the `ai-tink-` naming wrapper from spike 2 because `defineSandbox` names Sprites with a bare hash.
+- Local Drop is not affected: `localProcessSandbox` has a writable stdin, so `acpCompatible` with `command: 'pi-acp'` would use the default stdio transport there.
+
+### Spike 4: Claude Code on a Sprite, and a Sprites provider latency bug (2026-10-13)
+
+Same connector, prefix policy, and packages as spike 3, plus `@tanstack/ai-claude-code` 0.8.1. Throwaway Sprites, destroyed afterwards. **Result: Claude Code works with the first-party adapter and no custom transport.**
+
+- **Preinstalled:** Claude Code 2.1.251 is on every Sprite; the workspace needs no `setup` step.
+- **Model through the connector:** the gateway also passes Anthropic-style `POST …/gateway/openrouter/<id>/v1/messages` through to OpenRouter. Claude Code needs `ANTHROPIC_BASE_URL` set to the gateway URL (without `/v1`), `ANTHROPIC_AUTH_TOKEN` set to a placeholder, `ANTHROPIC_API_KEY` empty, and `ANTHROPIC_MODEL` plus the `ANTHROPIC_DEFAULT_{HAIKU,SONNET,OPUS}_MODEL` aliases set to `anthropic/claude-haiku-5.5`. Set `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`. `claude -p --dangerously-skip-permissions` edited a file in 13 s by hand. Claude Code prints a harmless "not a model this version recognizes" notice and assumes a 200k context window.
+- **The adapter:** `claudeCodeText('anthropic/claude-haiku-5.5', { authMode: 'host', permissionMode: 'bypassPermissions', env: { …the variables above } })` with `withSandbox(spritesSandbox({ urlAuth: 'sprite' }))` streamed `RUN_STARTED`, reasoning events, a `Write` tool call and its result, the reply text, and `RUN_FINISHED`. The file existed. `authMode: 'host'` stops the adapter injecting a host `ANTHROPIC_API_KEY`. With `writableStdin: false` the adapter writes the prompt to a file and redirects the CLI's stdin from it, so no stdin transport is needed. No port is used.
+- **Provider latency bug:** `@tanstack/ai-sandbox-sprites` 0.2.5 makes every `process.exec` take about 11 s, even `echo hi`. The Sprites server sends the exit frame after about 200 ms but keeps the exec WebSocket open for about 11.3 s (tested with and without `stdin=true` and `path`). The provider's `wait()` resolves when the socket closes, not when the exit frame arrives. The `sprite` CLI and `@fly/sprites` return in under a second. The Claude Code adapter makes several exec calls after the process exits, which is the 55 s gap before `RUN_FINISHED`; the process had already exited. This inflates every number above (the 97 to 134 s to `RUN_STARTED` in spikes 2 to 4 is mostly this plus Sprite creation). A fix in the provider is to resolve `wait()` on the exit frame; a workaround is to wrap `handle.process.exec` and `spawn` with `@fly/sprites`. Not yet reported upstream.
+
+### Choosing a harness for hosting
+
+|                     | OpenCode                                          | pi over ACP                                          | Claude Code                       |
+| ------------------- | ------------------------------------------------- | ---------------------------------------------------- | --------------------------------- |
+| On the Sprite       | install `opencode-ai`                             | pi preinstalled, install `pi-acp`                    | preinstalled                      |
+| Adapter             | first-party, `ai-opencode`                        | generic, `acpCompatible`, third-party `pi-acp` 0.0.x | first-party, `ai-claude-code`     |
+| Port or custom code | needs the one public port, unauthenticated server | custom `openTransport` with `@fly/sprites`           | none                              |
+| Gateway protocol    | OpenAI-compatible via `opencode.json`             | OpenAI-compatible via `models.json`                  | Anthropic-compatible via env vars |
+| Models              | any OpenRouter model                              | any OpenRouter model                                 | Claude models; others not tried   |
+
+Claude Code is the least work and the safest of the three. pi is the most model-agnostic. OpenCode is the one used locally today, and its hosted blockers (spike 2) are the largest.
 
 ### Recommendation (before the decision)
 

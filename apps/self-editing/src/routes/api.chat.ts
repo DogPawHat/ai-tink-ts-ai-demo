@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { chat, chatParamsFromRequest, toServerSentEventsResponse } from "@tanstack/ai";
-import { opencodeText } from "@tanstack/ai-opencode";
+import { claudeCodeText } from "@tanstack/ai-claude-code";
 import { withSandbox } from "@tanstack/ai-sandbox";
 import { getAgentConfiguration } from "../lib/agent.server";
 
@@ -21,13 +21,16 @@ export const Route = createFileRoute("/api/chat")({
             ? params.forwardedProps.sessionId
             : undefined;
         const response = chat({
-          adapter: opencodeText(config.model, {
-            permissionMode: "acceptEdits",
-            directory: "/workspace",
+          adapter: claudeCodeText(config.model, {
+            // Credentials come from `env`, not from an injected ANTHROPIC_API_KEY.
+            authMode: "host",
+            // Drop is the isolation boundary, so the agent runs without prompts.
+            permissionMode: "bypassPermissions",
+            env: config.env,
           }),
           messages: params.messages,
           systemPrompts: [
-            "You are editing the Vite app that hosts this conversation. Read before editing, then make the requested change directly in this project's files. The page at / is the live site. Keep the chat working and give a concise summary of edits. Vite will hot reload the browser. Use vp for package management and validation.",
+            "You are editing the Vite app that hosts this conversation. Read AGENTS.md first, then read before editing and make the requested change directly in this project's files. The page at / is the live site. Keep the chat working and give a concise summary of edits. Vite will hot reload the browser. Use vp for package management and validation.",
           ],
           threadId: params.threadId ?? "local-demo",
           runId: params.runId,

@@ -37,7 +37,7 @@ function Home() {
     connection: fetchServerSentEvents("/api/chat", () => ({ body: { sessionId } })),
     onCustomEvent: (name, value) => {
       if (
-        name === "opencode.session-id" &&
+        name === "claude-code.session-id" &&
         typeof value === "object" &&
         value !== null &&
         "sessionId" in value &&
@@ -61,7 +61,7 @@ function Home() {
         <header className="mb-8 flex flex-col gap-5 border-b pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-3">
             <Badge variant="secondary" className="gap-1.5">
-              <SparklesIcon className="size-3.5" /> TanStack AI × OpenCode Zen × Drop
+              <SparklesIcon className="size-3.5" /> TanStack AI × Claude Code × Drop
             </Badge>
             <h1 className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
               Make this site yours.

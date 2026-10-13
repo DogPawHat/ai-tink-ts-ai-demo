@@ -2,9 +2,9 @@
 
 Demos of [TanStack AI](https://github.com/TanStack/ai), managed as a pnpm workspace with [Vite+](https://viteplus.dev/).
 
-| App                                      | Description                                                                                                |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [`apps/self-editing`](apps/self-editing) | A TanStack Start site that edits its own source through TanStack AI's OpenCode adapter, sandboxed in Drop. |
+| App                                      | Description                                                                                                   |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| [`apps/self-editing`](apps/self-editing) | A TanStack Start site that edits its own source through TanStack AI's Claude Code adapter, sandboxed in Drop. |
 
 ## Development
 

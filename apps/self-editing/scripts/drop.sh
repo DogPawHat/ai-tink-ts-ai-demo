@@ -15,7 +15,7 @@ env_id="${env_id//\//-}"
 
 case "${1:-}" in
   setup)
-    drop run -e "$env_id" --mount "$toolchain_dir" bash -c 'vp --version && npm install --prefix "$HOME/.local" -g --allow-scripts=opencode-ai opencode-ai'
+    drop run -e "$env_id" --mount "$toolchain_dir" bash -c 'vp --version && npm install --prefix "$HOME/.local" -g --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code'
     ;;
   dev)
     vp exec varlock run -- drop run -e "$env_id" --mount "$toolchain_dir" --tcp-publish 3000 vp dev --host 0.0.0.0
