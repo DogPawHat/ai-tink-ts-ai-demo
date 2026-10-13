@@ -2,9 +2,10 @@
 
 Demos of [TanStack AI](https://github.com/TanStack/ai), managed as a pnpm workspace with [Vite+](https://viteplus.dev/).
 
-| App                                      | Description                                                                                         |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| [`apps/self-editing`](apps/self-editing) | A TanStack Start site that edits its own source through the TanStack AI harness, sandboxed in Drop. |
+| App                                        | Description                                                                                         |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| [`apps/self-editing`](apps/self-editing)   | A TanStack Start site that edits its own source through the TanStack AI harness, sandboxed in Drop. |
+| [`apps/pydantic-agui`](apps/pydantic-agui) | A TanStack AI React client talking to a Pydantic AI agent over AG-UI, served by FastAPI.            |
 
 ## Development
 
