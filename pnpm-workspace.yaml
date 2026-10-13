@@ -1,6 +1,11 @@
+packages:
+  - apps/*
+
 catalog:
   vite: npm:@voidzero-dev/vite-plus-core@0.3.2
   vite-plus: 0.3.2
+# The pinned TanStack PR previews reference matching pkg.pr.new dependencies.
+blockExoticSubdeps: false
 overrides:
   vite@*: "catalog:"
 peerDependencyRules:
