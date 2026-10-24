@@ -3,11 +3,10 @@ from datetime import UTC, datetime
 
 from pydantic_ai import Agent
 from pydantic_ai.models import Model
-from pydantic_ai.models.openai import OpenAIChatModel
-from pydantic_ai.providers.openai import OpenAIProvider
+from pydantic_ai.models.anthropic import AnthropicModel
+from pydantic_ai.providers.anthropic import AnthropicProvider
 
-ZEN_BASE_URL = "https://opencode.ai/zen/v1"
-DEFAULT_MODEL = "opencode/deepseek-v4.1-flash"
+DEFAULT_MODEL = "claude-haiku-5-5"
 
 INSTRUCTIONS = """\
 You are a concise assistant in a demo of TanStack AI clients talking to a
@@ -16,13 +15,13 @@ tool you used.
 """
 
 
-def zen_model() -> Model:
-    """OpenCode Zen through its OpenAI-compatible chat-completions endpoint."""
-    api_key = os.environ.get("OPENCODE_API_KEY")
+def anthropic_model() -> Model:
+    """Claude through the Anthropic API."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        raise RuntimeError("OPENCODE_API_KEY is not set. Run the server through `varlock run`.")
-    name = os.environ.get("OPENCODE_MODEL", DEFAULT_MODEL).removeprefix("opencode/")
-    return OpenAIChatModel(name, provider=OpenAIProvider(base_url=ZEN_BASE_URL, api_key=api_key))
+        raise RuntimeError("ANTHROPIC_API_KEY is not set. Run the server through `varlock run`.")
+    name = os.environ.get("ANTHROPIC_MODEL", DEFAULT_MODEL)
+    return AnthropicModel(name, provider=AnthropicProvider(api_key=api_key))
 
 
 # No model is set here so importing this module needs no API key. The server

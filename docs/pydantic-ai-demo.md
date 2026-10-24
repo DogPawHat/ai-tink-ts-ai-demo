@@ -1,6 +1,6 @@
 # Pydantic AI demo
 
-Status: first version built in `apps/pydantic-agui` (2026-10-13). Verified against the live Zen model (`deepseek-v4.1-flash`) through the Vite proxy and a browser: tool calls and the final answer stream to the client. Not deployed.
+Status: first version built in `apps/pydantic-agui` (2026-10-13). Verified against the live Zen model (`deepseek-v4.1-flash`) through the Vite proxy and a browser: tool calls and the final answer stream to the client. On 2026-10-24 it moved to Claude (`claude-haiku-5-5`, Anthropic API) and was deployed as the Fly app `ai-tink-pydantic`, gated by an access key; see the app's README. A live run against Claude is **unverified** until `ANTHROPIC_API_KEY` is set on the app.
 
 ## Goal
 
@@ -19,22 +19,21 @@ apps/pydantic-agui/   # frontend: TanStack Start in SPA mode
   server/             # FastAPI + Pydantic AI, managed with uv
 ```
 
-Dev ports: client 3200, server 8010. Vite proxies `/api/agent` to the server root. The client uses released `@tanstack/ai-react` and `@tanstack/ai` 1.0.0, not the PR #1555 preview that `apps/self-editing` pins. See the app's README for commands.
+Dev ports: client 3200, server 8010. Vite proxies `/api/agent` to the server, which serves AG-UI at `/api/agent`. The client uses released `@tanstack/ai-react` and `@tanstack/ai` 1.0.0, not the PR #1555 preview that `apps/self-editing` pins. See the app's README for commands.
 
-The server module sets no model on the agent. `create_app` takes a model factory, and the default builds an OpenCode Zen model from `OPENCODE_API_KEY`. Tests pass `TestModel`, so they need no key.
+The server module sets no model on the agent. `create_app` takes a model factory, and the default builds an Anthropic model from `ANTHROPIC_API_KEY`. Tests pass `TestModel`, so they need no key.
 
-Deploy the frontend and the FastAPI server as Fly apps (see [hosting-plan.md](hosting-plan.md)).
+Deployed as one Fly app rather than two: FastAPI serves the SPA build next to the agent endpoint, so there is no CORS and one access-key gate covers both.
 
 ## Undecided
 
-Decided: TanStack Start in SPA mode for the frontend, OpenCode Zen for the model, and a `package.json` script (`dev:server`, wrapped in `varlock run`) to start the Python server. Python is not linted or type checked by `vp check`.
+Decided: TanStack Start in SPA mode for the frontend, Claude through the Anthropic API for the model (OpenCode Zen until 2026-10-24), and a `package.json` script (`dev:server`, wrapped in `varlock run`) to start the Python server. Python is not linted or type checked by `vp check`.
 
 ## Not yet done
 
 - The preview browser in the agent host could not reach the dev server, so browser checks used a local Playwright Chromium.
 - The UI ignores the reasoning events the live model sends; it renders only text and tool calls.
 - Typed output, client-side tools, and approval interrupts.
-- Deployment to Fly.
 - Python lint and type checking (for example `ruff`).
 
 ## Possible third demo
@@ -46,4 +45,4 @@ Not decided. Candidates that show something the other two do not:
 
 ## Credentials
 
-The server reuses the key from `apps/self-editing`. `apps/pydantic-agui/.env.local` is a copy of that app's Varlock-encrypted `.env.local`. The `linux-tpm` encryption key is machine-wide, so the copy decrypts here without re-encrypting. It is git-ignored; copy it again if the key changes. Decryption needs the `tss` group (see [development.md](development.md)): `sg tss -c 'vp run dev:server'`.
+Locally, `apps/pydantic-agui/.env.local` (git-ignored, Varlock-encrypted) needs `ANTHROPIC_API_KEY`; the old copy holds only the OpenCode key, so add the Anthropic key to it. The `linux-tpm` encryption key is machine-wide. On Fly, the key is the `ANTHROPIC_API_KEY` secret. Decryption needs the `tss` group (see [development.md](development.md)): `sg tss -c 'vp run dev:server'`.

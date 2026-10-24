@@ -11,7 +11,7 @@ Notes for coding agents working on this repository. Read these before changing a
 
 ## Status
 
-Last updated 2026-10-13. `apps/self-editing` (the site) and `apps/self-editing-host` (the Fly app) exist, and the first, owner-only version is deployed. `apps/pydantic-agui` has a first version. Statements marked **unverified** have not been tested; check them before relying on them, and update these docs when you do.
+Last updated 2026-10-13. `apps/self-editing` (the site) and `apps/self-editing-host` (the Fly app) exist, and the first, owner-only version is deployed. `apps/pydantic-agui` is deployed as `ai-tink-pydantic`. Statements marked **unverified** have not been tested; check them before relying on them, and update these docs when you do.
 
 ## Keeping these docs useful
 

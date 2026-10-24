@@ -11,12 +11,7 @@ export default defineConfig({
     host: "127.0.0.1",
     port: 3200,
     allowedHosts: ["dogpawbot.taildd39d.ts.net"],
-    // The browser talks to /api/agent; the Pydantic AI server serves AG-UI at its root.
-    proxy: {
-      "/api/agent": {
-        target: AGENT_SERVER,
-        rewrite: (path) => path.replace(/^\/api\/agent/, "") || "/",
-      },
-    },
+    // The Pydantic AI server serves AG-UI at /api/agent, as it does when deployed.
+    proxy: { "/api/agent": AGENT_SERVER },
   },
 });

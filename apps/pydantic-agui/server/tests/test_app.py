@@ -42,7 +42,7 @@ async def test_health(client: AsyncClient) -> None:
 
 async def test_run_streams_ag_ui_events(client: AsyncClient) -> None:
     response = await client.post(
-        "/", json=run_input("What time is it?"), headers={"accept": "text/event-stream"}
+        "/api/agent", json=run_input("What time is it?"), headers={"accept": "text/event-stream"}
     )
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
@@ -53,3 +53,30 @@ async def test_run_streams_ag_ui_events(client: AsyncClient) -> None:
     # TestModel calls every tool once, so the tools are wired up.
     assert "TOOL_CALL_START" in types
     assert "TEXT_MESSAGE_CONTENT" in types
+
+
+async def test_access_key_gates_everything_but_health() -> None:
+    app = create_app(lambda: TestModel(), access_key="secret")
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="https://test") as client:
+        assert (await client.get("/health")).status_code == 200
+        assert (await client.post("/api/agent", json=run_input("hi"))).status_code == 401
+        assert (await client.get("/?key=wrong")).status_code == 401
+
+        response = await client.get("/?key=secret")
+        assert response.status_code == 303
+        assert response.headers["location"] == "/"
+        response = await client.post(
+            "/api/agent", json=run_input("hi"), headers={"accept": "text/event-stream"}
+        )
+        assert response.status_code == 200
+
+
+async def test_serves_the_client_shell(tmp_path) -> None:
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "app.js").write_text("console.log(1)")
+    (tmp_path / "_shell.html").write_text("<html>shell</html>")
+    app = create_app(lambda: TestModel(), static_dir=tmp_path)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        assert (await client.get("/")).text == "<html>shell</html>"
+        assert (await client.get("/any/route")).text == "<html>shell</html>"
+        assert (await client.get("/assets/app.js")).text == "console.log(1)"

@@ -1,25 +1,71 @@
+import hashlib
+import hmac
+import os
 from collections.abc import Callable
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from pydantic_ai.models import Model
 from pydantic_ai.ui.ag_ui import AGUIAdapter
-from starlette.responses import Response
+from starlette.responses import FileResponse, PlainTextResponse, RedirectResponse, Response
+from starlette.staticfiles import StaticFiles
 
-from .agent import agent, zen_model
+from .agent import agent, anthropic_model
+
+ACCESS_COOKIE = "pydantic_agui_access"
 
 
-def create_app(model_factory: Callable[[], Model] = zen_model) -> FastAPI:
+def create_app(
+    model_factory: Callable[[], Model] = anthropic_model,
+    access_key: str | None = None,
+    static_dir: Path | None = None,
+) -> FastAPI:
+    """The AG-UI endpoint at /api/agent, plus the built client when `static_dir` is set.
+
+    With an `access_key`, a visit to `/?key=<access_key>` sets a cookie, and every
+    other path except /health needs that cookie. The server pays for each run, so
+    the deployed app sets one.
+    """
     app = FastAPI(title="Pydantic AI over AG-UI")
+    cookie_value = hashlib.sha256(f"access:{access_key}".encode()).hexdigest() if access_key else ""
+
+    @app.middleware("http")
+    async def require_access(request: Request, call_next) -> Response:
+        if not access_key or request.url.path == "/health":
+            return await call_next(request)
+        key = request.query_params.get("key")
+        if key is not None and hmac.compare_digest(key, access_key):
+            response = RedirectResponse(request.url.path, status_code=303)
+            response.set_cookie(
+                ACCESS_COOKIE, cookie_value, max_age=31536000, httponly=True, secure=True, samesite="lax"
+            )
+            return response
+        if hmac.compare_digest(request.cookies.get(ACCESS_COOKIE, ""), cookie_value):
+            return await call_next(request)
+        return PlainTextResponse("Open this page with ?key=<access key>.", status_code=401)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    @app.post("/")
+    @app.post("/api/agent")
     async def run_agent(request: Request) -> Response:
         return await AGUIAdapter.dispatch_request(request, agent=agent, model=model_factory())
+
+    if static_dir is not None:
+        # The client is a SPA build: hashed assets plus one shell page for every route.
+        app.mount("/assets", StaticFiles(directory=static_dir / "assets"), name="assets")
+        shell = static_dir / "_shell.html"
+
+        @app.get("/{path:path}")
+        async def spa(path: str) -> FileResponse:
+            return FileResponse(shell)
 
     return app
 
 
-app = create_app()
+static = os.environ.get("STATIC_DIR")
+app = create_app(
+    access_key=os.environ.get("ACCESS_KEY") or None,
+    static_dir=Path(static) if static else None,
+)
