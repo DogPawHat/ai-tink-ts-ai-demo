@@ -19,7 +19,7 @@ apps/pydantic-agui/   # frontend: TanStack Start in SPA mode
   server/             # FastAPI + Pydantic AI, managed with uv
 ```
 
-Dev ports: client 3200, server 8010. Vite proxies `/api/agent` to the server root. The client uses released `@tanstack/ai-react` 0.30.3 and `@tanstack/ai` 0.68.0, not the PR #1555 preview that `apps/self-editing` pins. See the app's README for commands.
+Dev ports: client 3200, server 8010. Vite proxies `/api/agent` to the server root. The client uses released `@tanstack/ai-react` and `@tanstack/ai` 1.0.0, not the PR #1555 preview that `apps/self-editing` pins. See the app's README for commands.
 
 The server module sets no model on the agent. `create_app` takes a model factory, and the default builds an OpenCode Zen model from `OPENCODE_API_KEY`. Tests pass `TestModel`, so they need no key.
 
