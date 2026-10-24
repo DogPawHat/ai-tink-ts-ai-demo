@@ -4,8 +4,8 @@ primary_region = "lhr"
 [env]
 PORT = "8080"
 PUBLIC_URL = "https://ai-tink-host.fly.dev"
-GATEWAY_URL = "https://api.sprites.dev/v1/gateway/openrouter/lnJFr15GNm0eu22128A3lg"
-AGENT_MODEL = "anthropic/claude-haiku-5.5"
+GATEWAY_URL = "https://api.sprites.dev/v1/gateway/anthropic/CTHG1MvraRUcrHgF8uTjQA"
+AGENT_MODEL = "claude-haiku-5-5"
 
 [http_service]
 internal_port = 8080

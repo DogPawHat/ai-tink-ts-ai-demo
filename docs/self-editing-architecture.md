@@ -30,7 +30,7 @@ Browser                       Fly app "ai-tink-host" (host)           Sprite "ai
 
 - **Sprite URLs are private to your Fly org.** Only members logged in to Fly can open them. That is why the first version is for the owner only.
 - **Widget token:** `HMAC-SHA256(TOKEN_SECRET, "widget:" + spriteName)`, baked into the injected `<script>` tag. `POST /api/chat` needs `Authorization: Bearer <token>`, an `X-Sprite` header, and an `Origin` that is that Sprite's own `https://<name>-<org>.sprites.app`. CORS allows only such origins.
-- **Model key:** a Sprites connector (`lnJFr15GNm0eu22128A3lg`, OpenRouter) holds it. Its access policy admits only Sprites named `ai-tink-*`. The Sprite calls `https://api.sprites.dev/v1/gateway/openrouter/<id>/v1/messages` with no credentials. The move to an Anthropic connector (`…/gateway/anthropic/<id>`, model `claude-haiku-5-5`) is in the code and docs, but `fly.toml` stays on OpenRouter until that connector exists.
+- **Model key:** a Sprites connector (`CTHG1MvraRUcrHgF8uTjQA`, Anthropic, API key) holds it. Its access policy admits only Sprites named `ai-tink-*`. The Sprite calls `https://api.sprites.dev/v1/gateway/anthropic/<id>/v1/messages`; Claude Code sends a placeholder bearer token, which the gateway replaces. Verified 2026-10-24 from a throwaway Sprite: a raw Messages call and `claude -p` with the host's env both worked, and the Sprite's environment held no key. The earlier OpenRouter connector (`lnJFr15GNm0eu22128A3lg`) is gone.
 - **The agent can do anything on its own Sprite**, including read the widget token, change the services, and use `sudo` (passwordless on Sprites). It cannot reach other Sprites or the host's secrets. A broken Sprite is repaired with "Reset".
 
 ## Fragile points
