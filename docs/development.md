@@ -2,7 +2,7 @@
 
 ## Layout and toolchain
 
-- pnpm workspace (`packages: [apps/*]` in `pnpm-workspace.yaml`), managed with [Vite+](https://viteplus.dev/) (`vp`). Local `vite-plus` is pinned to 1.4.0 through the pnpm catalog (updated 2026-10-24, along with TanStack AI 1.0 and TypeScript 7). Vite+ 1.4 ships Vitest 5, so pnpm warns that `@tanstack/ai-sandbox`, `ai-persistence`, and `ai-skills` 1.0.0 want a `vitest` ^4.1.10 peer. Checks, tests, and builds pass despite the warning; whether the deployed host and the agent's chat still work after the update is **unverified**.
+- pnpm workspace (`packages: [apps/*]` in `pnpm-workspace.yaml`), managed with [Vite+](https://viteplus.dev/) (`vp`). Local `vite-plus` is pinned to 1.4.0 through the pnpm catalog (updated 2026-10-24, along with TanStack AI 1.0 and TypeScript 7). Vite+ 1.4 ships Vitest 5, so pnpm warns that `@tanstack/ai-sandbox`, `ai-persistence`, and `ai-skills` 1.0.0 want a `vitest` ^4.1.10 peer. Checks, tests, and builds pass despite the warning; the deployed host was verified after the update on 2026-10-24: a widget-style request (run from the Fly machine with its secrets, via `fly ssh console`) set up a Sprite, and Claude Code edited the site through the Anthropic connector. The browser widget itself was not retested.
 - Shared `lint`, `fmt`, and `staged` settings live in the root `vite.config.ts`. Vite+ ignores `lint` and `fmt` blocks in app configs; use `overrides` in the root config for app-specific rules.
 - Each app keeps its own `vite.config.ts` for plugins, aliases, and the dev server.
 - Vite+ docs ship in `node_modules/vite-plus/docs`. `guide/monorepo.md` and `guide/run.md` cover workspace behavior.
