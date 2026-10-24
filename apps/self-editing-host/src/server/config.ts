@@ -8,7 +8,7 @@ export interface HostConfig {
   accessKey: string;
   /** Secret that signs the per-Sprite widget tokens. */
   tokenSecret: string;
-  /** Sprites gateway URL for the OpenRouter connector, without a trailing slash. */
+  /** Sprites gateway URL for the Anthropic connector, without a trailing slash. */
   gatewayUrl: string;
   model: string;
   /** Public origin of this host. The widget script is loaded from it. */
@@ -34,7 +34,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): HostConfig {
     accessKey: env.ACCESS_KEY!,
     tokenSecret: env.TOKEN_SECRET!,
     gatewayUrl: env.GATEWAY_URL!.replace(/\/+$/, ""),
-    model: env.AGENT_MODEL || "anthropic/claude-haiku-5.5",
+    model: env.AGENT_MODEL || "claude-haiku-5-5",
     publicUrl: env.PUBLIC_URL!.replace(/\/+$/, ""),
     assetDir: env.ASSET_DIR || fileURLToPath(new URL("./", import.meta.url)),
   };

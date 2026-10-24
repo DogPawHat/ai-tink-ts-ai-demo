@@ -118,7 +118,7 @@ function timed<T extends object>(label: string, target: T): T {
 
 /**
  * A sandbox on a visitor's existing Sprite. The framework names new Sprites
- * with a bare hash, which the OpenRouter connector would refuse, so this never
+ * with a bare hash, which the Anthropic connector would refuse, so this never
  * creates one: it attaches to the Sprite the host already provisioned. It also
  * replaces the provider's exec and spawn, which wait ~11 s per call for the
  * exec socket to close.

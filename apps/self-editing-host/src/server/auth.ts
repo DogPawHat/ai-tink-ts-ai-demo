@@ -1,6 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-/** Sprites created by this host. The OpenRouter connector admits only this prefix. */
+/** Sprites created by this host. The Anthropic connector admits only this prefix. */
 export const SPRITE_PREFIX = "ai-tink-";
 export const SPRITE_NAME = /^ai-tink-[a-f0-9]{12}$/;
 
