@@ -53,7 +53,11 @@ function Home() {
             {error ? <p className="text-sm text-red-300">{error.message}</p> : null}
           </div>
           <form className="flex gap-2 border-t border-slate-800 p-4" onSubmit={submit}>
+            <label htmlFor="message" className="sr-only">
+              Message
+            </label>
             <input
+              id="message"
               className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-white"
               placeholder="Message the agent…"
               value={draft}
@@ -86,11 +90,11 @@ function Message({ message }: { message: UIMessage }) {
   const isUser = message.role === "user";
   return (
     <div className={isUser ? "flex justify-end" : "flex flex-col items-start gap-2"}>
-      {message.parts.map((part, index) => {
+      {keyParts(message.parts).map(({ key, part }) => {
         if (part.type === "text") {
           return part.content ? (
             <p
-              key={index}
+              key={key}
               className={`max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${
                 isUser ? "bg-amber-500 text-slate-950" : "bg-slate-800"
               }`}
@@ -102,7 +106,7 @@ function Message({ message }: { message: UIMessage }) {
         if (part.type === "tool-call") {
           return (
             <div
-              key={part.id}
+              key={key}
               className="max-w-[85%] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-xs"
             >
               <p className="text-amber-300">
@@ -120,4 +124,21 @@ function Message({ message }: { message: UIMessage }) {
       })}
     </div>
   );
+}
+
+/**
+ * Pairs each part with a React key. Tool calls have ids; text parts do not, so a
+ * text part is keyed by the tool call before it, which stays stable as parts stream in.
+ */
+function keyParts(parts: UIMessage["parts"]) {
+  let after = "start";
+  let count = 0;
+  return parts.map((part) => {
+    if (part.type === "tool-call") {
+      after = part.id;
+      count = 0;
+      return { key: part.id, part };
+    }
+    return { key: `${after}:${part.type}:${count++}`, part };
+  });
 }
