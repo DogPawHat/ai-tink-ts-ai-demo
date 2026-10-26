@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useMemo, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   CopilotChat,
   CopilotKit,
+  SandboxFunctionsContext,
   useAgent,
   useConfigureSuggestions,
   useCopilotKit,
@@ -30,23 +31,23 @@ const suggestions = [
   },
 ];
 
-type SendMessage = (message: string) => Promise<void>;
+const sendFollowUp = {
+  name: "sendFollowUp",
+  description:
+    "Sends a message to the assistant as if the user typed it, starting the next turn. Use it for buttons such as 'Explain this result'.",
+  parameters: type({ message: "string" }),
+};
 
-// Sandboxed widgets call sendFollowUp; ChatSetup, inside the provider, fills this in.
-const followUp: { send?: SendMessage } = {};
-
-// CopilotKit needs these to keep the same identity across renders.
+// CopilotKit needs these to keep the same identity across renders. The provider tells
+// the model about sendFollowUp from here; SandboxFunctions supplies the handler that
+// sandboxed widgets actually call, since it needs the agent from inside the provider.
 const openGenerativeUI = {
   designSkill,
   sandboxFunctions: [
     {
-      name: "sendFollowUp",
-      description:
-        "Sends a message to the assistant as if the user typed it, starting the next turn. Use it for buttons such as 'Explain this result'.",
-      parameters: type({ message: "string" }),
-      handler: async ({ message }: { message: string }) => {
-        await followUp.send?.(message);
-        return { sent: true };
+      ...sendFollowUp,
+      handler: async () => {
+        throw new Error("sendFollowUp is only available inside SandboxFunctions");
       },
     },
   ],
@@ -62,23 +63,38 @@ function Home() {
       <GenComponents />
       <DataToolStatus />
       <ChatSetup />
-      <div className="flex h-dvh flex-col">
-        <header className="border-b px-4 py-2 text-sm font-medium">Generative UI</header>
-        <CopilotChat className="min-h-0 flex-1" />
-      </div>
+      <SandboxFunctions>
+        <div className="flex h-dvh flex-col">
+          <header className="border-b px-4 py-2 text-sm font-medium">Generative UI</header>
+          <CopilotChat className="min-h-0 flex-1" />
+        </div>
+      </SandboxFunctions>
     </CopilotKit>
   );
 }
 
 function ChatSetup() {
+  useConfigureSuggestions({ suggestions, available: "before-first-message" });
+  return null;
+}
+
+/** Gives sandboxed widgets a sendFollowUp that sends through this chat's agent. */
+function SandboxFunctions({ children }: { children: ReactNode }) {
   const { agent } = useAgent();
   const { copilotkit } = useCopilotKit();
-  useConfigureSuggestions({ suggestions, available: "before-first-message" });
-  useEffect(() => {
-    followUp.send = async (message) => {
-      agent.addMessage({ id: crypto.randomUUID(), role: "user", content: message });
-      await copilotkit.runAgent({ agent });
-    };
-  }, [agent, copilotkit]);
-  return null;
+  // The sandbox is rebuilt when these change, so keep them stable.
+  const functions = useMemo(
+    () => [
+      {
+        ...sendFollowUp,
+        handler: async ({ message }: { message: string }) => {
+          agent.addMessage({ id: crypto.randomUUID(), role: "user", content: message });
+          await copilotkit.runAgent({ agent });
+          return { sent: true };
+        },
+      },
+    ],
+    [agent, copilotkit],
+  );
+  return <SandboxFunctionsContext value={functions}>{children}</SandboxFunctionsContext>;
 }
