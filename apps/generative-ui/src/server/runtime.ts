@@ -7,6 +7,7 @@ import {
   convertInputToTanStackAI,
   createCopilotRuntimeHandler,
 } from "@copilotkit/runtime/v2";
+import { dataTools } from "./data-tools";
 import { describeSandboxTool, sandboxToolMiddleware } from "./sandbox-tool";
 
 export const BASE_PATH = "/api/copilotkit";
@@ -37,7 +38,7 @@ export function createAgent(adapter: AdapterFactory = anthropicAdapter) {
         runId: input.runId,
         messages: messages as ModelMessage[],
         systemPrompts: [SYSTEM_PROMPT, ...systemPrompts],
-        tools: tools.map(describeSandboxTool) as AnyClientTool[],
+        tools: [...dataTools, ...(tools.map(describeSandboxTool) as AnyClientTool[])],
         abortController,
         agentLoopStrategy: maxIterations(8),
         middleware: [sandboxToolMiddleware()],

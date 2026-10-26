@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .tanstack-projected-*
+.tanstack
 
 # Editor directories and files
 .vscode/*

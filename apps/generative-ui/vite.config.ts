@@ -34,5 +34,9 @@ export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   // CopilotKit's React package imports its own CSS, which Node cannot load during SSR.
   ssr: { noExternal: [/^@copilotkit\/react-/] },
+  test: {
+    env: { COPILOTKIT_TELEMETRY_DISABLED: "true" },
+    server: { deps: { inline: [/@copilotkit\/react-/] } },
+  },
   server: { host: "127.0.0.1", port: 3300, strictPort: true },
 });
