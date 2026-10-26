@@ -135,9 +135,20 @@ Problems found and fixed:
 - **Axis ticks** showed raw numbers like `100000000`; linear axes now use compact notation.
 - **Server data tools rendered nothing** and CopilotKit warned about it; they now show a one-line status (`useRenderTool`).
 
-Tests (`vp test`, 33): every registered component's schema converts to JSON Schema; content-based React keys for the model's lists, numbering repeats; chart descriptions render to SVG through the React adapter for each mark, stacked and grouped series, empty data, and time axes with bad values; series order and colors; raw colors and too many marks are rejected; the stream repair at every split point; both data tools with a mocked `fetch`, including the point fallback; and the `/api/copilotkit` route with TanStack AI's `fakeText` adapter (a text answer, a server tool round trip, and a string `jsExpressions` repaired before the client and validation see it).
+Tests (`vp test`, 39): every registered component's schema converts to JSON Schema; content-based React keys for the model's lists, numbering repeats; chart descriptions render to SVG through the React adapter for each mark, stacked and grouped series, empty data, and time axes with bad values; series order and colors; raw colors and too many marks are rejected; the stream repair at every split point; both data tools with a mocked `fetch`, including the point fallback; web search results completed for CopilotKit and restored from history; and the `/api/copilotkit` route with TanStack AI's `fakeText` adapter (a text answer, a server tool round trip, and a string `jsExpressions` repaired before the client and validation see it).
 
 Still open besides the leak: the client bundle has a 2.5 MB route chunk (710 kB gzipped), mostly CopilotKit's markdown renderer. `Suspense` and `useSuspenseQuery` are wired up but no component fetches its own data yet, so that path is untested.
+
+## Web search
+
+Added 2026-10-26: Anthropic's own web search (`webSearchTool` from `@tanstack/ai-anthropic/tools`, at most 5 searches per request), in `src/server/web-search.ts`. TanStack AI has no Exa or provider-neutral search tool; we tried `exa-js` briefly and chose Anthropic's because it needs no new key. It runs inside Anthropic's API, so it only works with Claude, and Anthropic bills each search. The chat shows each search as a status line with its query, like the data tools.
+
+CopilotKit doesn't know about tools the provider runs, which broke two things, both found in live tests:
+
+- **The search was missing from history.** TanStack AI's adapter reports a finished search as a tool call start and end marked provider-executed, with no arguments or result events. CopilotKit's converter drops the mark, so the browser kept a `web_search` call with no arguments and no result. `webSearchMiddleware` (a chat middleware) adds the arguments and a result: titles and links for reading, plus the raw result to replay.
+- **The model disowned what it had read.** CopilotKit starts a new run after each component the agent draws, rebuilding the conversation from browser history. With only titles in history, Claude decided partway through its answer that its accurate release notes were made up, and said so. `restoreWebSearches` turns each search in the history back into Anthropic's `server_tool_use` and `web_search_tool_result` blocks, which carry the pages' text encrypted for exactly this, so later runs see what the model read. Searches are placed before the message's other tool calls: Anthropic returned a 400 when a replayed search came after a `githubRepo` call, whose result has to follow it immediately.
+
+Checked live: a release-notes question searched three times, drew a `cardGrid`, and the follow-up runs kept to the release notes; a later turn quoted the release page. The encrypted page text makes each search result several kilobytes in the browser's history.
 
 ## Later
 

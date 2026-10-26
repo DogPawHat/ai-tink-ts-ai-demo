@@ -7,7 +7,7 @@ The agent draws in two ways:
 - **Registered components**, styled with the site's Tailwind and shadcn setup: `callout`, `statRow`, `dataTable`, `chart` (TanStack Charts), `timeline`, `cardGrid`, and the interactive `choicePicker`, which waits for your answer.
 - **[Open Generative UI](https://docs.copilotkit.ai/generative-ui/open-generative-ui)** for anything else: the agent writes HTML, CSS, and JS that run in a sandboxed iframe, styled from the site's theme tokens.
 
-Two server tools give it real data: `npmDownloads` (npm registry) and `githubRepo` (GitHub API). Neither needs a key.
+Two server tools give it real data: `npmDownloads` (npm registry) and `githubRepo` (GitHub API). Neither needs a key. It can also search the web with Anthropic's own web search, which uses the Anthropic key and is billed per search.
 
 ## Layout
 
@@ -16,6 +16,7 @@ src/
   routes/api/copilotkit.$.ts   # the AG-UI endpoint (CopilotKit runtime handler)
   server/runtime.ts            # BuiltInAgent + chat() on Claude
   server/data-tools.ts         # npmDownloads, githubRepo
+  server/web-search.ts         # Anthropic web search, kept in history across runs
   server/sandbox-tool.ts       # repairs generateSandboxedUi arguments (see the docs)
   genui/define.tsx             # defineGenComponent: validation, skeleton, Suspense, error boundary
   genui/components/*.tsx       # one file per component; each registers itself

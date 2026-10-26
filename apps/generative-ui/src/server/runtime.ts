@@ -9,12 +9,14 @@ import {
 } from "@copilotkit/runtime/v2";
 import { dataTools } from "./data-tools";
 import { describeSandboxTool, sandboxToolMiddleware } from "./sandbox-tool";
+import { restoreWebSearches, webSearch, webSearchMiddleware } from "./web-search";
 
 export const BASE_PATH = "/api/copilotkit";
 
 const SYSTEM_PROMPT = `You answer with UI as well as text.
 Prefer the registered UI components when one fits the answer.
 Use generateSandboxedUi only when no registered component can express what the user wants, such as a calculator, an interactive diagram, or a small simulation.
+Use web_search for recent events or facts you aren't sure of, and name the sources you used. Fetch data before you draw a component that shows it.
 Keep prose short; let the UI carry the answer. Don't restate in text what a component already shows.`;
 
 type ChatAdapter = Parameters<typeof chat>[0]["adapter"];
@@ -36,12 +38,12 @@ export function createAgent(adapter: AdapterFactory = anthropicAdapter) {
         adapter: adapter(),
         threadId: input.threadId,
         runId: input.runId,
-        messages: messages as ModelMessage[],
+        messages: restoreWebSearches(messages as ModelMessage[]),
         systemPrompts: [SYSTEM_PROMPT, ...systemPrompts],
-        tools: [...dataTools, ...(tools.map(describeSandboxTool) as AnyClientTool[])],
+        tools: [...dataTools, webSearch, ...(tools.map(describeSandboxTool) as AnyClientTool[])],
         abortController,
         agentLoopStrategy: maxIterations(8),
-        middleware: [sandboxToolMiddleware()],
+        middleware: [sandboxToolMiddleware(), webSearchMiddleware()],
       });
     },
   });

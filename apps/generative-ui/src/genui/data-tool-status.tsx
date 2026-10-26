@@ -2,7 +2,7 @@ import { useRenderTool } from "@copilotkit/react-core/v2";
 import { type } from "arktype";
 import { Database, LoaderCircle } from "lucide-react";
 
-/** A one-line status for the server's data tools, which have no UI of their own. */
+/** A one-line status for the server's data tools and web search, which have no UI of their own. */
 function Status({ done, label }: { done: boolean; label: string }) {
   return (
     <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -14,6 +14,7 @@ function Status({ done, label }: { done: boolean; label: string }) {
 
 const npmArgs = type({ package: "string", period: "string" });
 const githubArgs = type({ repo: "string" });
+const searchArgs = type({ query: "string" });
 
 export function DataToolStatus() {
   useRenderTool({
@@ -31,6 +32,18 @@ export function DataToolStatus() {
     parameters: githubArgs,
     render: ({ parameters, status }) => (
       <Status done={status === "complete"} label={`GitHub repository ${parameters.repo ?? "…"}`} />
+    ),
+  });
+  useRenderTool({
+    name: "web_search",
+    parameters: searchArgs,
+    render: ({ parameters, status }) => (
+      <Status
+        done={status === "complete"}
+        label={
+          parameters.query ? `Searched the web for “${parameters.query}”` : "Searching the web…"
+        }
+      />
     ),
   });
   return null;
