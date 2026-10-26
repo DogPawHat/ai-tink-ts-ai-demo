@@ -7,13 +7,14 @@ import {
   convertInputToTanStackAI,
   createCopilotRuntimeHandler,
 } from "@copilotkit/runtime/v2";
+import { describeSandboxTool, sandboxToolMiddleware } from "./sandbox-tool";
 
 export const BASE_PATH = "/api/copilotkit";
 
 const SYSTEM_PROMPT = `You answer with UI as well as text.
 Prefer the registered UI components when one fits the answer.
 Use generateSandboxedUi only when no registered component can express what the user wants, such as a calculator, an interactive diagram, or a small simulation.
-Keep prose short; let the UI carry the answer.`;
+Keep prose short; let the UI carry the answer. Don't restate in text what a component already shows.`;
 
 type ChatAdapter = Parameters<typeof chat>[0]["adapter"];
 
@@ -36,9 +37,10 @@ export function createAgent(adapter: AdapterFactory = anthropicAdapter) {
         runId: input.runId,
         messages: messages as ModelMessage[],
         systemPrompts: [SYSTEM_PROMPT, ...systemPrompts],
-        tools: tools as AnyClientTool[],
+        tools: tools.map(describeSandboxTool) as AnyClientTool[],
         abortController,
         agentLoopStrategy: maxIterations(8),
+        middleware: [sandboxToolMiddleware()],
       });
     },
   });

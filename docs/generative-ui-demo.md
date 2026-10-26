@@ -69,9 +69,37 @@ Verified in a browser on the dev server:
 Checked live against `claude-haiku-5-5`:
 
 - **Registered components work.** Claude called `callout` and it rendered with the site's styles. A follow-up run then added text after it as a separate message, so the merged-text problem seen in 1.70.1 did not appear. The text restated the callout; the system prompt should tell the agent not to.
-- **Open Generative UI works.** "Build me an interactive mortgage calculator" produced a working calculator in a sandboxed iframe (`sandbox="allow-scripts"`). But Claude produced it twice: the first widget showed $0 everywhere with an empty home-price field, and a second, working one followed. Cause not yet known; check in v1 whether the first widget's script failed or whether the follow-up run regenerated it.
+- **Open Generative UI works.** "Build me an interactive mortgage calculator" produced a working calculator in a sandboxed iframe (`sandbox="allow-scripts"`). The first try produced it twice; see the next section.
 - **The Anthropic client-tool path works** for both `callout` and `generateSandboxedUi`.
-- The dev server ran out of memory (4 GB heap) after about 15 minutes and nine restarts triggered by `.env.local` edits. Watch for this; it may be a leak across Vite restarts rather than steady-state use.
+
+## Fixed after the spike (2026-10-26)
+
+### The widget generated twice
+
+Cause, from the thread's stored AG-UI events (`/api/copilotkit/threads/<id>/events`): Claude's first `generateSandboxedUi` call sent `jsExpressions` as the string `"MC.init()"` instead of `["MC.init()"]`. `chat()` validated the arguments against the tool schema, returned an error to Claude, and Claude retried correctly. But CopilotKit's middleware had already streamed the first attempt into the page, and its parser only reads `jsExpressions` as an array, so that widget never ran its init expression and stayed on screen showing $0.
+
+Fix, in `src/server/sandbox-tool.ts`:
+
+- `describeSandboxTool` adds field descriptions to the tool's schema, which CopilotKit sends without any. It reduced but did not remove the mistake (one in four replays still sent a string).
+- `sandboxToolMiddleware`, a TanStack AI chat middleware, repairs it when it happens: `onChunk` rewrites the streamed argument deltas (adding `[` before and `]` after the string, as it streams), which is what CopilotKit renders, and `onBeforeToolCall` fixes the parsed arguments that `chat()` validates. It logs a warning when it repairs a call. Unit tests cover the stream rewriting at every split point.
+
+Six replays of the mortgage request after the fix each made one valid call. The repair did not fire in those runs, so the live path is covered only by the unit tests and the route test.
+
+### Dev server memory leak
+
+Symptom: the dev server's memory grew about 400 MB per Vite restart (a `vite.config.ts` or `.env.local` change) and never came back, until Node ran out of heap after about nine restarts.
+
+Measured by restarting eight times while recording RSS:
+
+- No browser attached: flat. `curl` of the SSR page: nearly flat. A browser reloading after each restart: +400 MB each time. So the leak follows the client modules the browser loads.
+- `apps/pydantic-agui` (Start in SPA mode, no CopilotKit): flat. A bare Vite+ app rendering CopilotKit's chat, with or without `@vitejs/plugin-react`: flat. This app without Tailwind, without `ssr.noExternal`, in SPA mode, or with import protection off: still leaking.
+- V8's sampling heap profiler (over the inspector, sampling across three restarts and reading what was still alive) put most of the retained memory in Babel syntax trees allocated by Start's compiler (`start-plugin-core/dist/esm/start-compiler/compiler.js`, `compile` and `router-utils`' `parseAst`).
+
+Cause: the Start compiler parses with Babel, and caches, every module whose code matches its detection patterns. The `ServerFn` pattern includes `\.\s*handler\s*\(` and `Middleware` is `createMiddleware`, and six of CopilotKit's pre-bundled dependency chunks (7.4 MB) match. That is about 400 MB of syntax trees per server instance for code that never uses Start. The old compilers are not freed on restart; what holds them was not found.
+
+Fix: `vite.config.ts` wraps the `tanstack-start-core::server-fn:*` plugins so their transform skips `node_modules` except TanStack's own packages. After the fix, eight restarts with a browser attached stayed between 2.2 and 2.7 GB. The idle baseline of about 2 GB comes from pre-bundling CopilotKit (a bare Vite+ app rendering its chat uses the same) and is not a leak.
+
+Worth reporting upstream: the compiler's `.handler(` heuristic matches third-party code, and the compilers survive dev server restarts.
 
 ## Later
 
