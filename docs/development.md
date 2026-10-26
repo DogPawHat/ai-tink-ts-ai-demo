@@ -18,11 +18,14 @@ vp install                      # install the whole workspace
 vp check                        # format, lint, and type check every app
 vp -C apps/self-editing test    # one app's tests
 vp -C apps/self-editing build   # one app's build
+vp run doctor                   # React Doctor over every app
 ```
 
 `vp dev` and `vp build` at the root do not pick an app in non-interactive shells; pass `-C apps/<name>`. `vp <name>` runs a built-in command and `vp run <name>` runs a `package.json` script, so `vp dev` and `vp run dev` can differ.
 
-The pre-commit hook runs `vp staged`, which runs `vp check --fix` on staged files.
+The pre-commit hook runs `vp staged`, which runs `vp check --fix` on staged files. It then runs [React Doctor](https://github.com/millionco/react-doctor) on staged files; its findings are printed but don't block the commit.
+
+React Doctor (installed 2026-10-26 with `react-doctor install`) also added its agent skill under `.claude/skills/` and `.agents/skills/`, and a GitHub Actions workflow that comments on pull requests. By default it sends a score and crash reports to its servers, and a full scan checks dependencies through Socket.dev; pass `--no-telemetry --no-supply-chain` to keep a run local. The installer writes its hook to `.vite-hooks/_/pre-commit`, which `vp config` generates and git ignores, so the hook lives in the tracked `.vite-hooks/pre-commit` instead.
 
 ## Running the host and testing it
 
