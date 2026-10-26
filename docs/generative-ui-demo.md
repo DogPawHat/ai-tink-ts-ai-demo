@@ -135,7 +135,7 @@ Problems found and fixed:
 - **Axis ticks** showed raw numbers like `100000000`; linear axes now use compact notation.
 - **Server data tools rendered nothing** and CopilotKit warned about it; they now show a one-line status (`useRenderTool`).
 
-Tests (`vp test`, 31): every registered component's schema converts to JSON Schema; chart descriptions render to SVG through the React adapter for each mark, stacked and grouped series, empty data, and time axes with bad values; series order and colors; raw colors and too many marks are rejected; the stream repair at every split point; both data tools with a mocked `fetch`, including the point fallback; and the `/api/copilotkit` route with TanStack AI's `fakeText` adapter (a text answer, a server tool round trip, and a string `jsExpressions` repaired before the client and validation see it).
+Tests (`vp test`, 33): every registered component's schema converts to JSON Schema; content-based React keys for the model's lists, numbering repeats; chart descriptions render to SVG through the React adapter for each mark, stacked and grouped series, empty data, and time axes with bad values; series order and colors; raw colors and too many marks are rejected; the stream repair at every split point; both data tools with a mocked `fetch`, including the point fallback; and the `/api/copilotkit` route with TanStack AI's `fakeText` adapter (a text answer, a server tool round trip, and a string `jsExpressions` repaired before the client and validation see it).
 
 Still open besides the leak: the client bundle has a 2.5 MB route chunk (710 kB gzipped), mostly CopilotKit's markdown renderer. `Suspense` and `useSuspenseQuery` are wired up but no component fetches its own data yet, so that path is untested.
 
