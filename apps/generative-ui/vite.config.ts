@@ -66,5 +66,10 @@ export default defineConfig({
     env: { COPILOTKIT_TELEMETRY_DISABLED: "true" },
     server: { deps: { inline: [/@copilotkit\/react-/] } },
   },
-  server: { host: "127.0.0.1", port: 3300, strictPort: true },
+  server: {
+    host: "127.0.0.1",
+    port: 3300,
+    strictPort: true,
+    allowedHosts: ["dogpawbot.taildd39d.ts.net"],
+  },
 });
