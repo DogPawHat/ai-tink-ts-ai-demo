@@ -25,7 +25,7 @@ vp run doctor                   # React Doctor over every app
 
 The pre-commit hook runs `vp staged`, which runs `vp check --fix` on staged files. It then runs [React Doctor](https://github.com/millionco/react-doctor) on staged files; its findings are printed but don't block the commit.
 
-React Doctor (installed 2026-10-26 with `react-doctor install`) also added its agent skill under `.claude/skills/` and `.agents/skills/`, and a GitHub Actions workflow that comments on pull requests. By default it sends a score and crash reports to its servers, and a full scan checks dependencies through Socket.dev; pass `--no-telemetry --no-supply-chain` to keep a run local. The installer writes its hook to `.vite-hooks/_/pre-commit`, which `vp config` generates and git ignores, so the hook lives in the tracked `.vite-hooks/pre-commit` instead.
+React Doctor (installed 2026-10-26 with `react-doctor install`) also added its agent skill under `.claude/skills/` and `.agents/skills/`, and a GitHub Actions workflow that comments on pull requests. By default it sends a score and crash reports to its servers, and a full scan checks dependencies through Socket.dev; pass `--no-telemetry --no-supply-chain` to keep a run local. The installer writes its hook to `.vite-hooks/_/pre-commit`, which `vp config` generates and git ignores, so the hook lives in the tracked `.vite-hooks/pre-commit` instead. `doctor.config.json` keeps Python virtualenvs (`**/.venv/**`) out of the scan: its security rules read `.py` files, and they flagged third-party code inside `apps/pydantic-agui/server/.venv` even though git ignores that folder (seen 2026-10-26 with 0.9.18).
 
 ## Running the host and testing it
 
