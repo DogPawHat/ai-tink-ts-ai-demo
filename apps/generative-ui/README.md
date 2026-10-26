@@ -38,7 +38,7 @@ Add a file to `src/genui/components/` that default-exports `defineGenComponent({
    sg tss -c 'vp run dev'
    ```
 
-`vp run dev` wraps `vp dev` in `varlock run`. Plain `vp dev` starts without the key: the page works, and a chat message shows the missing-key error.
+`vp run dev` runs `scripts/dev.mjs`, which wraps `vp dev` in `varlock run` and restarts the whole process when Vite would restart in place (a `vite.config.ts` or `.env` change, or the `r` shortcut). Plain `vp dev` starts without the key: the page works, and a chat message shows the missing-key error.
 
 | Variable                        | Purpose                                                 |
 | ------------------------------- | ------------------------------------------------------- |
@@ -46,7 +46,7 @@ Add a file to `src/genui/components/` that default-exports `defineGenComponent({
 | `ANTHROPIC_MODEL`               | Anthropic model id, default `claude-haiku-5-5`          |
 | `COPILOTKIT_TELEMETRY_DISABLED` | `true` by default in `.env.schema`; turns off telemetry |
 
-The dev server leaks about 50 MB each time Vite restarts it in place (after a `vite.config.ts` or `.env.local` change), because of a Vite 8 / Rolldown bug that keeps every old server alive. Restart the process after many such edits. See the docs for the cause and a minimal repro.
+Restarting in a new process works around a Vite 8 / Rolldown bug that keeps every in-place-restarted server alive (about 50 MB each here); it also lets Varlock pick up changed env values. Plain `vp dev` still leaks. See the docs for the cause and a minimal repro.
 
 ## Validation
 

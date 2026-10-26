@@ -1,6 +1,6 @@
 # Generative UI demo
 
-Status: v1 built in `apps/generative-ui` and checked against Claude (`claude-haiku-5-5`) in a browser, 2026-10-26. A dev-only memory leak remains, caused by an upstream Vite 8 / Rolldown bug (see [Dev server memory leak](#dev-server-memory-leak)). Not deployed. Work happens on `feat/generative-ui` and lands as one PR once local v1 passes `vp check`, `vp test`, and a browser check. Statements marked **unverified** have not been tested.
+Status: v1 built in `apps/generative-ui` and checked against Claude (`claude-haiku-5-5`) in a browser, 2026-10-26. An upstream Vite 8 / Rolldown bug leaks a dev server per in-place restart; `vp run dev` works around it (see [Dev server memory leak](#dev-server-memory-leak)). Not deployed. Work happens on `feat/generative-ui` and lands as one PR once local v1 passes `vp check`, `vp test`, and a browser check. Statements marked **unverified** have not been tested.
 
 ## Goal
 
@@ -111,9 +111,9 @@ The callbacks close over the old environment and config, so the whole old server
 
 Reproduced outside this repo with no plugins and no dependencies: a two-file app (`index.html`, `main.js`) on plain Vite 8.3.5 (Rolldown 1.2.15), restarting by touching `vite.config.mjs` and fetching the page, shows the same five objects and the same global-handle growth per restart. Vite+ 1.4.0 bundles the same Rolldown and behaves identically. The leak per restart is small for a tiny app and grows with the module graph and plugin state each server builds.
 
-Searched `vitejs/vite`, `rolldown/rolldown`, `vitejs/rolldown-vite`, and `voidzero-dev/vite-plus` on 2026-10-26: no matching report. The nearest are Rolldown #11189 (bundled dev memory that a full GC does free) and #10985 (native allocator memory across builds). Not reported upstream yet.
+Searched `vitejs/vite`, `rolldown/rolldown`, `vitejs/rolldown-vite`, and `voidzero-dev/vite-plus` on 2026-10-26: no matching report. The nearest are Rolldown #11189 (bundled dev memory that a full GC does free) and #10985 (native allocator memory across builds). Not reported upstream; the owner decided against filing issues or pull requests with Vite or TanStack Start for now.
 
-Workaround until it's fixed: restart the dev process (not just let Vite restart itself) after many `vite.config.ts` or `.env.local` edits; about 70 in-process restarts reach the default heap limit in this app.
+Workaround (2026-10-26): never restart in place. `vp run dev` runs `scripts/dev.mjs`, which starts `varlock run -- vp dev` with `GENUI_DEV_SUPERVISED=1`. The `restartInNewProcess` plugin in `vite.config.ts` then replaces `server.restart()` (used for config and `.env` changes and the `r` shortcut) with closing the server and exiting with code 75, and the script starts a fresh process. Verified: five config restarts and one `.env.local` restart each came back in a new process at a steady 900 MB, the page served after each, and Ctrl-C left no processes behind. A fresh process also lets Varlock decrypt changed values, which an in-place restart never did. Plain `vp dev` keeps Vite's own restart, and the leak.
 
 Also worth reporting to TanStack Start: the compiler's `.handler(` heuristic matches third-party code.
 

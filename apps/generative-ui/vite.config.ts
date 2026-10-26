@@ -29,8 +29,36 @@ function skipDependenciesInStartCompiler(options: unknown[]) {
   return plugins;
 }
 
+/**
+ * Vite 8 / Rolldown keep every dev server that Vite restarts in place alive
+ * (see docs/generative-ui-demo.md). When scripts/dev.mjs runs the server, a
+ * restart (config or .env change, or the `r` shortcut) exits instead, and the
+ * script starts a fresh process, which also lets Varlock decrypt new values.
+ */
+/** Must match RESTART_CODE in scripts/dev.mjs. */
+const RESTART_CODE = 75;
+
+function restartInNewProcess(): Plugin {
+  return {
+    name: "generative-ui:restart-in-new-process",
+    apply: "serve",
+    configureServer(server) {
+      if (process.env.GENUI_DEV_SUPERVISED !== "1") return;
+      server.restart = async () => {
+        await server.close();
+        process.exit(RESTART_CODE);
+      };
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [skipDependenciesInStartCompiler(tanstackStart()), viteReact(), tailwindcss()],
+  plugins: [
+    skipDependenciesInStartCompiler(tanstackStart()),
+    viteReact(),
+    tailwindcss(),
+    restartInNewProcess(),
+  ],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   // CopilotKit's React package imports its own CSS, which Node cannot load during SSR.
   ssr: { noExternal: [/^@copilotkit\/react-/] },

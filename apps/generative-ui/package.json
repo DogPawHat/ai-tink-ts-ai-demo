@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "varlock run -- vp dev",
+    "dev": "node scripts/dev.mjs",
     "build": "vp build",
     "preview": "vp preview"
   },
