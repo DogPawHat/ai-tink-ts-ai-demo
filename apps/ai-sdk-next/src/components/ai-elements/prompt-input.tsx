@@ -66,6 +66,9 @@ import {
 const convertBlobUrlToDataUrl = async (url: string): Promise<string | null> => {
   try {
     const response = await fetch(url);
+    if (!response.ok) {
+      return null;
+    }
     const blob = await response.blob();
     // FileReader uses callback-based API, wrapping in Promise is necessary
     // oxlint-disable-next-line eslint-plugin-promise(avoid-new)
@@ -80,6 +83,41 @@ const convertBlobUrlToDataUrl = async (url: string): Promise<string | null> => {
   } catch {
     return null;
   }
+};
+
+// The object URL is revoked when the attachment is removed, cleared, or unmounted
+const createAttachments = (files: File[]) => {
+  const attachments: (FileUIPart & { id: string })[] = [];
+  for (const file of files) {
+    attachments.push({
+      filename: file.name,
+      id: nanoid(),
+      mediaType: file.type,
+      type: "file",
+      url: URL.createObjectURL(file),
+    });
+  }
+  return attachments;
+};
+
+const matchesAccept = (file: File, accept: string | undefined) => {
+  if (!accept || accept.trim() === "") {
+    return true;
+  }
+
+  const patterns = accept
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  return patterns.some((pattern) => {
+    if (pattern.endsWith("/*")) {
+      // e.g: image/* -> image/
+      const prefix = pattern.slice(0, -1);
+      return file.type.startsWith(prefix);
+    }
+    return file.type === pattern;
+  });
 };
 
 const captureScreenshot = async (): Promise<File | null> => {
@@ -238,16 +276,8 @@ export const PromptInputProvider = ({
       return;
     }
 
-    setAttachmentFiles((prev) => [
-      ...prev,
-      ...incoming.map((file) => ({
-        filename: file.name,
-        id: nanoid(),
-        mediaType: file.type,
-        type: "file" as const,
-        url: URL.createObjectURL(file),
-      })),
-    ]);
+    const next = createAttachments(incoming);
+    setAttachmentFiles((prev) => [...prev, ...next]);
   }, []);
 
   const remove = useCallback((id: string) => {
@@ -366,7 +396,7 @@ export interface ReferencedSourcesContext {
   clear: () => void;
 }
 
-export const LocalReferencedSourcesContext = createContext<ReferencedSourcesContext | null>(null);
+const LocalReferencedSourcesContext = createContext<ReferencedSourcesContext | null>(null);
 
 export const usePromptInputReferencedSources = () => {
   const ctx = useContext(LocalReferencedSourcesContext);
@@ -471,6 +501,57 @@ export type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, "onSubmit" 
   ) => void | Promise<void>;
 };
 
+// Accepts dropped files on the form, or anywhere on the document when `globalDrop` is set
+const useFileDrop = (
+  formRef: RefObject<HTMLFormElement | null>,
+  add: (files: FileList) => void,
+  globalDrop: boolean | undefined,
+) => {
+  useEffect(() => {
+    const target = globalDrop ? document : formRef.current;
+    if (!target) {
+      return;
+    }
+
+    const onDragOver = (e: Event) => {
+      if ((e as DragEvent).dataTransfer?.types?.includes("Files")) {
+        e.preventDefault();
+      }
+    };
+    const onDrop = (e: Event) => {
+      const { dataTransfer } = e as DragEvent;
+      if (dataTransfer?.types?.includes("Files")) {
+        e.preventDefault();
+      }
+      if (dataTransfer?.files && dataTransfer.files.length > 0) {
+        add(dataTransfer.files);
+      }
+    };
+    target.addEventListener("dragover", onDragOver);
+    target.addEventListener("drop", onDrop);
+    return () => {
+      target.removeEventListener("dragover", onDragOver);
+      target.removeEventListener("drop", onDrop);
+    };
+  }, [formRef, add, globalDrop]);
+};
+
+const useReferencedSourcesState = (): ReferencedSourcesContext => {
+  const [sources, setSources] = useState<(SourceDocumentUIPart & { id: string })[]>([]);
+
+  const add = useCallback((incoming: SourceDocumentUIPart[] | SourceDocumentUIPart) => {
+    const array = Array.isArray(incoming) ? incoming : [incoming];
+    const next = array.map((s) => ({ ...s, id: nanoid() }));
+    setSources((prev) => [...prev, ...next]);
+  }, []);
+  const clear = useCallback(() => setSources([]), []);
+  const remove = useCallback((id: string) => {
+    setSources((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  return useMemo(() => ({ add, clear, remove, sources }), [add, clear, remove, sources]);
+};
+
 export const PromptInput = ({
   className,
   accept,
@@ -497,9 +578,7 @@ export const PromptInput = ({
   const files = usingProvider ? controller.attachments.files : items;
 
   // ----- Local referenced sources (always local to PromptInput)
-  const [referencedSources, setReferencedSources] = useState<
-    (SourceDocumentUIPart & { id: string })[]
-  >([]);
+  const refsCtx = useReferencedSourcesState();
 
   // Keep a ref to files for cleanup on unmount (avoids stale closure)
   const filesRef = useRef(files);
@@ -512,33 +591,10 @@ export const PromptInput = ({
     inputRef.current?.click();
   }, []);
 
-  const matchesAccept = useCallback(
-    (f: File) => {
-      if (!accept || accept.trim() === "") {
-        return true;
-      }
-
-      const patterns = accept
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      return patterns.some((pattern) => {
-        if (pattern.endsWith("/*")) {
-          // e.g: image/* -> image/
-          const prefix = pattern.slice(0, -1);
-          return f.type.startsWith(prefix);
-        }
-        return f.type === pattern;
-      });
-    },
-    [accept],
-  );
-
-  const addLocal = useCallback(
+  const add = useCallback(
     (fileList: File[] | FileList) => {
       const incoming = [...fileList];
-      const accepted = incoming.filter((f) => matchesAccept(f));
+      const accepted = incoming.filter((f) => matchesAccept(f, accept));
       if (incoming.length && accepted.length === 0) {
         onError?.({
           code: "accept",
@@ -556,30 +612,27 @@ export const PromptInput = ({
         return;
       }
 
-      setItems((prev) => {
-        const capacity =
-          typeof maxFiles === "number" ? Math.max(0, maxFiles - prev.length) : undefined;
-        const capped = typeof capacity === "number" ? sized.slice(0, capacity) : sized;
-        if (typeof capacity === "number" && sized.length > capacity) {
-          onError?.({
-            code: "max_files",
-            message: "Too many files. Some were not added.",
-          });
-        }
-        const next: (FileUIPart & { id: string })[] = [];
-        for (const file of capped) {
-          next.push({
-            filename: file.name,
-            id: nanoid(),
-            mediaType: file.type,
-            type: "file",
-            url: URL.createObjectURL(file),
-          });
-        }
-        return [...prev, ...next];
-      });
+      const capacity =
+        typeof maxFiles === "number" ? Math.max(0, maxFiles - files.length) : undefined;
+      const capped = typeof capacity === "number" ? sized.slice(0, capacity) : sized;
+      if (typeof capacity === "number" && sized.length > capacity) {
+        onError?.({
+          code: "max_files",
+          message: "Too many files. Some were not added.",
+        });
+      }
+      if (capped.length === 0) {
+        return;
+      }
+
+      if (usingProvider) {
+        controller.attachments.add(capped);
+      } else {
+        const next = createAttachments(capped);
+        setItems((prev) => [...prev, ...next]);
+      }
     },
-    [matchesAccept, maxFiles, maxFileSize, onError],
+    [accept, maxFileSize, maxFiles, onError, files.length, usingProvider, controller],
   );
 
   const removeLocal = useCallback(
@@ -592,46 +645,6 @@ export const PromptInput = ({
         return prev.filter((file) => file.id !== id);
       }),
     [],
-  );
-
-  // Wrapper that validates files before calling provider's add
-  const addWithProviderValidation = useCallback(
-    (fileList: File[] | FileList) => {
-      const incoming = [...fileList];
-      const accepted = incoming.filter((f) => matchesAccept(f));
-      if (incoming.length && accepted.length === 0) {
-        onError?.({
-          code: "accept",
-          message: "No files match the accepted types.",
-        });
-        return;
-      }
-      const withinSize = (f: File) => (maxFileSize ? f.size <= maxFileSize : true);
-      const sized = accepted.filter(withinSize);
-      if (accepted.length > 0 && sized.length === 0) {
-        onError?.({
-          code: "max_file_size",
-          message: "All files exceed the maximum size.",
-        });
-        return;
-      }
-
-      const currentCount = files.length;
-      const capacity =
-        typeof maxFiles === "number" ? Math.max(0, maxFiles - currentCount) : undefined;
-      const capped = typeof capacity === "number" ? sized.slice(0, capacity) : sized;
-      if (typeof capacity === "number" && sized.length > capacity) {
-        onError?.({
-          code: "max_files",
-          message: "Too many files. Some were not added.",
-        });
-      }
-
-      if (capped.length > 0) {
-        controller?.attachments.add(capped);
-      }
-    },
-    [matchesAccept, maxFileSize, maxFiles, onError, files.length, controller],
   );
 
   const clearAttachments = useCallback(
@@ -649,9 +662,8 @@ export const PromptInput = ({
     [usingProvider, controller],
   );
 
-  const clearReferencedSources = useCallback(() => setReferencedSources([]), []);
+  const clearReferencedSources = refsCtx.clear;
 
-  const add = usingProvider ? addWithProviderValidation : addLocal;
   const remove = usingProvider ? controller.attachments.remove : removeLocal;
   const openFileDialog = usingProvider
     ? controller.attachments.openFileDialog
@@ -678,63 +690,7 @@ export const PromptInput = ({
     }
   }, [files, syncHiddenInput]);
 
-  // Attach drop handlers on nearest form and document (opt-in)
-  useEffect(() => {
-    const form = formRef.current;
-    if (!form) {
-      return;
-    }
-    if (globalDrop) {
-      // when global drop is on, let the document-level handler own drops
-      return;
-    }
-
-    const onDragOver = (e: DragEvent) => {
-      if (e.dataTransfer?.types?.includes("Files")) {
-        e.preventDefault();
-      }
-    };
-    const onDrop = (e: DragEvent) => {
-      if (e.dataTransfer?.types?.includes("Files")) {
-        e.preventDefault();
-      }
-      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        add(e.dataTransfer.files);
-      }
-    };
-    form.addEventListener("dragover", onDragOver);
-    form.addEventListener("drop", onDrop);
-    return () => {
-      form.removeEventListener("dragover", onDragOver);
-      form.removeEventListener("drop", onDrop);
-    };
-  }, [add, globalDrop]);
-
-  useEffect(() => {
-    if (!globalDrop) {
-      return;
-    }
-
-    const onDragOver = (e: DragEvent) => {
-      if (e.dataTransfer?.types?.includes("Files")) {
-        e.preventDefault();
-      }
-    };
-    const onDrop = (e: DragEvent) => {
-      if (e.dataTransfer?.types?.includes("Files")) {
-        e.preventDefault();
-      }
-      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        add(e.dataTransfer.files);
-      }
-    };
-    document.addEventListener("dragover", onDragOver);
-    document.addEventListener("drop", onDrop);
-    return () => {
-      document.removeEventListener("dragover", onDragOver);
-      document.removeEventListener("drop", onDrop);
-    };
-  }, [add, globalDrop]);
+  useFileDrop(formRef, add, globalDrop);
 
   useEffect(
     () => () => {
@@ -770,21 +726,6 @@ export const PromptInput = ({
       remove,
     }),
     [files, add, remove, clearAttachments, openFileDialog],
-  );
-
-  const refsCtx = useMemo<ReferencedSourcesContext>(
-    () => ({
-      add: (incoming: SourceDocumentUIPart[] | SourceDocumentUIPart) => {
-        const array = Array.isArray(incoming) ? incoming : [incoming];
-        setReferencedSources((prev) => [...prev, ...array.map((s) => ({ ...s, id: nanoid() }))]);
-      },
-      clear: clearReferencedSources,
-      remove: (id: string) => {
-        setReferencedSources((prev) => prev.filter((s) => s.id !== id));
-      },
-      sources: referencedSources,
-    }),
-    [referencedSources, clearReferencedSources],
   );
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
@@ -898,7 +839,7 @@ export const PromptInputTextarea = ({
 }: PromptInputTextareaProps) => {
   const controller = useOptionalPromptInputController();
   const attachments = usePromptInputAttachments();
-  const [isComposing, setIsComposing] = useState(false);
+  const isComposingRef = useRef(false);
 
   const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = useCallback(
     (e) => {
@@ -911,7 +852,7 @@ export const PromptInputTextarea = ({
       }
 
       if (e.key === "Enter") {
-        if (isComposing || e.nativeEvent.isComposing) {
+        if (isComposingRef.current || e.nativeEvent.isComposing) {
           return;
         }
         if (e.shiftKey) {
@@ -940,7 +881,7 @@ export const PromptInputTextarea = ({
         }
       }
     },
-    [onKeyDown, isComposing, attachments],
+    [onKeyDown, attachments],
   );
 
   const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = useCallback(
@@ -970,8 +911,12 @@ export const PromptInputTextarea = ({
     [attachments],
   );
 
-  const handleCompositionEnd = useCallback(() => setIsComposing(false), []);
-  const handleCompositionStart = useCallback(() => setIsComposing(true), []);
+  const handleCompositionEnd = useCallback(() => {
+    isComposingRef.current = false;
+  }, []);
+  const handleCompositionStart = useCallback(() => {
+    isComposingRef.current = true;
+  }, []);
 
   const controlledProps = controller
     ? {

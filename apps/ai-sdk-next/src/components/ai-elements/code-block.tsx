@@ -174,7 +174,7 @@ const createRawTokens = (code: string): TokenizedCode => ({
 });
 
 // Synchronous highlight with callback for async results
-export const highlightCode = (
+const highlightCode = (
   code: string,
   language: BundledLanguage,
   // oxlint-disable-next-line eslint-plugin-promise(prefer-await-to-callbacks)
@@ -372,22 +372,20 @@ export const CodeBlockContent = ({
     [code, language, rawTokens],
   );
 
-  // Async highlighting result (populated after shiki loads)
-  const [asyncTokens, setAsyncTokens] = useState<TokenizedCode | null>(null);
-  const asyncKeyRef = useRef({ code, language });
-
-  // Invalidate stale async tokens synchronously during render
-  if (asyncKeyRef.current.code !== code || asyncKeyRef.current.language !== language) {
-    asyncKeyRef.current = { code, language };
-    setAsyncTokens(null);
-  }
+  // Async highlighting result (populated after shiki loads), tagged with the
+  // input it was computed for so a stale result is ignored when the input changes
+  const [asyncResult, setAsyncResult] = useState<{
+    code: string;
+    language: BundledLanguage;
+    tokens: TokenizedCode;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    highlightCode(code, language, (result) => {
+    highlightCode(code, language, (tokens) => {
       if (!cancelled) {
-        setAsyncTokens(result);
+        setAsyncResult({ code, language, tokens });
       }
     });
 
@@ -396,6 +394,8 @@ export const CodeBlockContent = ({
     };
   }, [code, language]);
 
+  const asyncTokens =
+    asyncResult?.code === code && asyncResult.language === language ? asyncResult.tokens : null;
   const tokenized = asyncTokens ?? syncTokens;
 
   return (
