@@ -46,7 +46,7 @@ Add a file to `src/genui/components/` that default-exports `defineGenComponent({
 | `ANTHROPIC_MODEL`               | Anthropic model id, default `claude-haiku-5-5`          |
 | `COPILOTKIT_TELEMETRY_DISABLED` | `true` by default in `.env.schema`; turns off telemetry |
 
-The dev server leaks about 50 MB each time Vite restarts it (after a `vite.config.ts` or `.env.local` change). Restart the process after many such edits. See the docs for the cause and the open investigation.
+The dev server leaks about 50 MB each time Vite restarts it in place (after a `vite.config.ts` or `.env.local` change), because of a Vite 8 / Rolldown bug that keeps every old server alive. Restart the process after many such edits. See the docs for the cause and a minimal repro.
 
 ## Validation
 

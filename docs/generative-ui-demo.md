@@ -1,6 +1,6 @@
 # Generative UI demo
 
-Status: v1 built in `apps/generative-ui` and checked against Claude (`claude-haiku-5-5`) in a browser, 2026-10-26. One dev-only memory leak is still open (see [Dev server memory leak](#dev-server-memory-leak)). Not deployed. Work happens on `feat/generative-ui` and lands as one PR once local v1 passes `vp check`, `vp test`, and a browser check. Statements marked **unverified** have not been tested.
+Status: v1 built in `apps/generative-ui` and checked against Claude (`claude-haiku-5-5`) in a browser, 2026-10-26. A dev-only memory leak remains, caused by an upstream Vite 8 / Rolldown bug (see [Dev server memory leak](#dev-server-memory-leak)). Not deployed. Work happens on `feat/generative-ui` and lands as one PR once local v1 passes `vp check`, `vp test`, and a browser check. Statements marked **unverified** have not been tested.
 
 ## Goal
 
@@ -50,7 +50,7 @@ The agent has two ways to draw:
 ## Plan
 
 1. **Spike** (first commit): Start app, `/api/copilotkit` with `BuiltInAgent` on Haiku, one registered component, Open Generative UI on. Check in a browser. Done.
-2. **v1**: the component set, chart, data tools, tests, starter prompts, docs. Done, apart from the open memory leak.
+2. **v1**: the component set, chart, data tools, tests, starter prompts, docs. Done. The remaining dev-server leak is upstream.
 3. **Deploy** to Fly with the access-key gate (separate milestone).
 
 ## Spike findings (2026-10-26)
@@ -99,15 +99,23 @@ Cause: the Start compiler parses with Babel, and caches, every module whose code
 
 Fix: `vite.config.ts` wraps the `tanstack-start-core::server-fn:*` plugins so their transform skips `node_modules` except TanStack's own packages.
 
-**Still open.** The fix shrank what each restart leaks; it did not stop old server instances being retained. Measured after the fix with the inspector, forcing a full GC after each restart with a browser attached: the live heap grew from 220 MB to 649 MB over eight restarts, a steady 53 MB per restart (RSS 553 MB to 1,124 MB). An earlier RSS-only measurement that looked flat was misleading; RSS includes garbage and moves with GC timing. Agent runs and ordinary use without restarts do not grow it.
+**Root cause found: a Vite 8 / Rolldown bug, not this app or TanStack Start.** The fix above shrank what each restart leaks; it did not stop old servers being retained. Measured after the fix with the inspector, forcing a full GC after each restart with a browser attached: the live heap grew from 220 MB to 649 MB over eight restarts, a steady 53 MB per restart. (An earlier RSS-only reading that looked flat was misleading; RSS includes garbage and moves with GC timing.) Agent runs and ordinary use without restarts don't grow it.
 
-What is not known: what holds the old instances, and what the remaining 53 MB is (a guess, untested: each old server's module graph and transform results). The packages checked for process listeners, globals, and module-level state (`start-plugin-core`, `router-plugin`, `router-generator`, `react-start`) showed nothing that holds a server. The bare Vite+ app freeing its old servers points at Start's plugin, but Vite+ keeping plugin instances alive is not ruled out.
+Heap snapshots after one and after four restarts showed one extra `Server`, `DevEnvironment`, `RunnableDevEnvironment`, `ModuleGraph`, and `WebSocketServer` per restart, all reachable only from V8's `(Global handles)`: references held by native code. Diffing what the global handles point at, per restart:
 
-Next step: heap snapshots after one and after four restarts (small enough now at about 220 MB live), find the objects that appear once per restart (such as Vite's per-environment module graphs or Start's compiler instances), and follow their retainer paths to the root. That decides whether to report it to TanStack Start or Vite+.
+- `BindingCallableBuiltinPlugin`: Rolldown's native wrapper for a built-in plugin (`makeBuiltinPluginCallable` in `rolldown/dist/shared/normalize-string-or-regex-*.mjs`).
+- `resolveSubpathImports` and `onWarn` closures (one per environment), and an anonymous closure over `getEnv`: callbacks Vite passes in the options of its native resolver, `viteResolvePlugin` (`vite:resolve-builtin`, built in `oxcResolvePlugin` in Vite's `node.js` chunk).
+- `Scanner`, `TsconfigCache`, `ConnectionsList`.
 
-Until then, restart the dev process after many config or `.env.local` edits; about 70 restarts would reach the default heap limit.
+The callbacks close over the old environment and config, so the whole old server, with its module graph, plugin state (including Start's compiler and its Babel trees), and watchers, stays reachable from native roots and can never be collected. Nothing on the JavaScript side releases the native wrappers when the server closes, and there is no dispose method to call.
 
-Worth reporting upstream either way: the compiler's `.handler(` heuristic matches third-party code.
+Reproduced outside this repo with no plugins and no dependencies: a two-file app (`index.html`, `main.js`) on plain Vite 8.3.5 (Rolldown 1.2.15), restarting by touching `vite.config.mjs` and fetching the page, shows the same five objects and the same global-handle growth per restart. Vite+ 1.4.0 bundles the same Rolldown and behaves identically. The leak per restart is small for a tiny app and grows with the module graph and plugin state each server builds.
+
+Searched `vitejs/vite`, `rolldown/rolldown`, `vitejs/rolldown-vite`, and `voidzero-dev/vite-plus` on 2026-10-26: no matching report. The nearest are Rolldown #11189 (bundled dev memory that a full GC does free) and #10985 (native allocator memory across builds). Not reported upstream yet.
+
+Workaround until it's fixed: restart the dev process (not just let Vite restart itself) after many `vite.config.ts` or `.env.local` edits; about 70 in-process restarts reach the default heap limit in this app.
+
+Also worth reporting to TanStack Start: the compiler's `.handler(` heuristic matches third-party code.
 
 ## v1 findings (2026-10-26)
 
