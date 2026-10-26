@@ -44,7 +44,7 @@ Add a file to `src/genui/components/` that default-exports `defineGenComponent({
 | Variable                        | Purpose                                                 |
 | ------------------------------- | ------------------------------------------------------- |
 | `ANTHROPIC_API_KEY`             | Anthropic API key (server only)                         |
-| `ANTHROPIC_MODEL`               | Anthropic model id, default `claude-haiku-5-5`          |
+| `ANTHROPIC_MODEL`               | Anthropic model id, default `claude-sonnet-5-5`         |
 | `COPILOTKIT_TELEMETRY_DISABLED` | `true` by default in `.env.schema`; turns off telemetry |
 
 Restarting in a new process works around a Vite 8 / Rolldown bug that keeps every in-place-restarted server alive (about 50 MB each here); it also lets Varlock pick up changed env values. Plain `vp dev` still leaks. See the docs for the cause and a minimal repro.

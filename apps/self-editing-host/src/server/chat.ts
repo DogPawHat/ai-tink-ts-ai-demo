@@ -113,6 +113,7 @@ export function createChatHandler(config: HostConfig, manager: SpriteManager) {
       ANTHROPIC_DEFAULT_SONNET_MODEL: config.model,
       ANTHROPIC_DEFAULT_OPUS_MODEL: config.model,
       CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
+      CLAUDE_CODE_EFFORT_LEVEL: "low",
     };
 
     busy.add(spriteName);

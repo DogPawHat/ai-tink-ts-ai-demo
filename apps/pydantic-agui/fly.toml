@@ -2,7 +2,7 @@ app = "ai-tink-pydantic"
 primary_region = "lhr"
 
 [env]
-ANTHROPIC_MODEL = "claude-haiku-5-5"
+ANTHROPIC_MODEL = "claude-sonnet-5-5"
 
 [http_service]
 internal_port = 8080

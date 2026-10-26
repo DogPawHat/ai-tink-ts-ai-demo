@@ -25,7 +25,7 @@ type ChatAdapter = Parameters<typeof chat>[0]["adapter"];
 export type AdapterFactory = () => ChatAdapter;
 
 const anthropicAdapter: AdapterFactory = () =>
-  anthropicText((process.env.ANTHROPIC_MODEL || "claude-haiku-5-5") as AnthropicChatModel);
+  anthropicText((process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5") as AnthropicChatModel);
 
 export function createAgent(adapter: AdapterFactory = anthropicAdapter) {
   return new BuiltInAgent({
@@ -43,6 +43,8 @@ export function createAgent(adapter: AdapterFactory = anthropicAdapter) {
         tools: [...dataTools, webSearch, ...(tools.map(describeSandboxTool) as AnyClientTool[])],
         abortController,
         agentLoopStrategy: maxIterations(8),
+        // Sonnet defaults to high effort; low is enough for picking components.
+        reasoning: { level: "low", summary: false },
         middleware: [sandboxToolMiddleware(), webSearchMiddleware()],
       });
     },

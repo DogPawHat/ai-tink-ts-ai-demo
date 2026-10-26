@@ -34,7 +34,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): HostConfig {
     accessKey: env.ACCESS_KEY!,
     tokenSecret: env.TOKEN_SECRET!,
     gatewayUrl: env.GATEWAY_URL!.replace(/\/+$/, ""),
-    model: env.AGENT_MODEL || "claude-haiku-5-5",
+    model: env.AGENT_MODEL || "claude-sonnet-5-5",
     publicUrl: env.PUBLIC_URL!.replace(/\/+$/, ""),
     assetDir: env.ASSET_DIR || fileURLToPath(new URL("./", import.meta.url)),
   };

@@ -1,6 +1,6 @@
 # Self-editing host
 
-The Fly app behind the self-editing demo. It sets up one [Fly Sprite](https://docs.fly.io/sprites) per visitor, serves the chat widget, and runs [Claude Code](https://www.npmjs.com/package/@anthropic-ai/claude-code) on that Sprite with `claude-haiku-5-5`, through the Sprites gateway to an Anthropic connector. The Sprite never holds a model key.
+The Fly app behind the self-editing demo. It sets up one [Fly Sprite](https://docs.fly.io/sprites) per visitor, serves the chat widget, and runs [Claude Code](https://www.npmjs.com/package/@anthropic-ai/claude-code) on that Sprite with `claude-sonnet-5-5`, through the Sprites gateway to an Anthropic connector. The Sprite never holds a model key.
 
 Live at <https://ai-tink-host.fly.dev> (Fly app `ai-tink-host`, org `personal`, region `lhr`). See [`docs/self-editing-architecture.md`](../../docs/self-editing-architecture.md) for how the pieces fit.
 
@@ -17,7 +17,7 @@ Open `https://ai-tink-host.fly.dev/?key=<ACCESS_KEY>` while logged in to Fly as 
 | `TOKEN_SECRET`    | secret               | Signs the per-Sprite widget tokens (HMAC)                      |
 | `GATEWAY_URL`     | `fly.toml`           | `https://api.sprites.dev/v1/gateway/anthropic/<connection id>` |
 | `PUBLIC_URL`      | `fly.toml`           | This host's origin; the proxy loads `widget.js` from it        |
-| `AGENT_MODEL`     | `fly.toml`, optional | Anthropic model id, default `claude-haiku-5-5`                 |
+| `AGENT_MODEL`     | `fly.toml`, optional | Anthropic model id, default `claude-sonnet-5-5`                |
 
 Rotate a secret with `fly secrets set NAME=... --app ai-tink-host`. Rotating `TOKEN_SECRET` invalidates the widget on existing Sprites until they are reset.
 

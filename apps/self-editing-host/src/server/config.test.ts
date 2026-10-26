@@ -18,7 +18,7 @@ test("lists every missing variable", () => {
 test("applies defaults and trims trailing slashes from URLs", () => {
   const config = loadConfig(env);
   expect(config.port).toBe(8080);
-  expect(config.model).toBe("claude-haiku-5-5");
+  expect(config.model).toBe("claude-sonnet-5-5");
   expect(config.gatewayUrl).toBe("https://gateway.example/anthropic");
   expect(config.publicUrl).toBe("https://host.example");
 });

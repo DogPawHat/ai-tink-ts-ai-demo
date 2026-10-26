@@ -3,10 +3,10 @@ from datetime import UTC, datetime
 
 from pydantic_ai import Agent
 from pydantic_ai.models import Model
-from pydantic_ai.models.anthropic import AnthropicModel
+from pydantic_ai.models.anthropic import AnthropicModel, AnthropicModelSettings
 from pydantic_ai.providers.anthropic import AnthropicProvider
 
-DEFAULT_MODEL = "claude-haiku-5-5"
+DEFAULT_MODEL = "claude-sonnet-5-5"
 
 INSTRUCTIONS = """\
 You are a concise assistant in a demo of TanStack AI clients talking to a
@@ -21,7 +21,12 @@ def anthropic_model() -> Model:
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not set. Run the server through `varlock run`.")
     name = os.environ.get("ANTHROPIC_MODEL", DEFAULT_MODEL)
-    return AnthropicModel(name, provider=AnthropicProvider(api_key=api_key))
+    # Sonnet defaults to high effort; low is enough for this demo's small tools.
+    return AnthropicModel(
+        name,
+        provider=AnthropicProvider(api_key=api_key),
+        settings=AnthropicModelSettings(anthropic_effort="low"),
+    )
 
 
 # No model is set here so importing this module needs no API key. The server

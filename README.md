@@ -2,11 +2,11 @@
 
 Demos of [TanStack AI](https://github.com/TanStack/ai), managed as a pnpm workspace with [Vite+](https://viteplus.dev/).
 
-| App                                                | Description                                                                                                                              |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| [`apps/self-editing`](apps/self-editing)           | The site that visitors change: a TanStack Start app with no chat. Every visitor Sprite starts from a copy of it.                         |
-| [`apps/self-editing-host`](apps/self-editing-host) | The Fly app behind the demo: it sets up a Sprite per visitor, serves the chat widget, and runs Claude Code on the Sprite with Haiku 5.5. |
-| [`apps/pydantic-agui`](apps/pydantic-agui)         | A TanStack AI React client talking to a Pydantic AI agent over AG-UI, served by FastAPI.                                                 |
+| App                                                | Description                                                                                                                               |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| [`apps/self-editing`](apps/self-editing)           | The site that visitors change: a TanStack Start app with no chat. Every visitor Sprite starts from a copy of it.                          |
+| [`apps/self-editing-host`](apps/self-editing-host) | The Fly app behind the demo: it sets up a Sprite per visitor, serves the chat widget, and runs Claude Code on the Sprite with Sonnet 5.5. |
+| [`apps/pydantic-agui`](apps/pydantic-agui)         | A TanStack AI React client talking to a Pydantic AI agent over AG-UI, served by FastAPI.                                                  |
 
 ## Development
 
