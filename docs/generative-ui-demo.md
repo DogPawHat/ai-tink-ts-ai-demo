@@ -1,6 +1,6 @@
 # Generative UI demo
 
-Status: spike built 2026-10-26 (`apps/generative-ui`); a live run against Claude is **unverified** because there is no local `ANTHROPIC_API_KEY` yet. Work happens on `feat/generative-ui` and lands as one PR once local v1 passes `vp check`, `vp test`, and a browser check. Statements marked **unverified** have not been tested.
+Status: spike built and checked against Claude (`claude-haiku-5-5`) in a browser, 2026-10-26 (`apps/generative-ui`). Work happens on `feat/generative-ui` and lands as one PR once local v1 passes `vp check`, `vp test`, and a browser check. Statements marked **unverified** have not been tested.
 
 ## Goal
 
@@ -66,11 +66,12 @@ Verified in a browser on the dev server:
 - **Bundle size:** CopilotKit's chat pulls in Shiki and Mermaid through its markdown renderer; the client build has a 2.3 MB route chunk. Worth trimming in v1 if CopilotKit allows it.
 - Two copies of `@copilotkit/core` install (one for the runtime, one for the React package, differing only in their Zod peer). They run on different sides, so this is harmless.
 
-Still unverified, pending a key:
+Checked live against `claude-haiku-5-5`:
 
-- A tool call from Claude rendering a registered component, and Open Generative UI widgets.
-- Whether text before and after a tool call is merged into one message (seen in 1.70.1; OpenMuse worked around it with `splitTextAtToolCalls()`).
-- The converter's client-tool schema cleanup with Anthropic (it is written with OpenAI in mind).
+- **Registered components work.** Claude called `callout` and it rendered with the site's styles. A follow-up run then added text after it as a separate message, so the merged-text problem seen in 1.70.1 did not appear. The text restated the callout; the system prompt should tell the agent not to.
+- **Open Generative UI works.** "Build me an interactive mortgage calculator" produced a working calculator in a sandboxed iframe (`sandbox="allow-scripts"`). But Claude produced it twice: the first widget showed $0 everywhere with an empty home-price field, and a second, working one followed. Cause not yet known; check in v1 whether the first widget's script failed or whether the follow-up run regenerated it.
+- **The Anthropic client-tool path works** for both `callout` and `generateSandboxedUi`.
+- The dev server ran out of memory (4 GB heap) after about 15 minutes and nine restarts triggered by `.env.local` edits. Watch for this; it may be a leak across Vite restarts rather than steady-state use.
 
 ## Later
 
