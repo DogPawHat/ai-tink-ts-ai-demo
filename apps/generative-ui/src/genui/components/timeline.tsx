@@ -1,4 +1,5 @@
 import { type } from "arktype";
+import { withContentKeys } from "../content-keys";
 import { defineGenComponent } from "../define";
 
 export default defineGenComponent({
@@ -13,16 +14,18 @@ export default defineGenComponent({
   }),
   render: ({ events }) => (
     <ol className="relative ml-2 border-l">
-      {events.map((event, i) => (
-        <li key={i} className="mb-4 ml-4 last:mb-0">
-          <span className="absolute -left-1.5 mt-1.5 size-3 rounded-full border-2 border-background bg-primary" />
-          <time className="text-xs text-muted-foreground">{event.date}</time>
-          <p className="font-medium">{event.title}</p>
-          {event.description && (
-            <p className="text-sm text-muted-foreground">{event.description}</p>
-          )}
-        </li>
-      ))}
+      {withContentKeys(events, (event) => JSON.stringify([event.date, event.title])).map(
+        ({ key, item: event }) => (
+          <li key={key} className="mb-4 ml-4 last:mb-0">
+            <span className="absolute -left-1.5 mt-1.5 size-3 rounded-full border-2 border-background bg-primary" />
+            <time className="text-xs text-muted-foreground">{event.date}</time>
+            <p className="font-medium">{event.title}</p>
+            {event.description && (
+              <p className="text-sm text-muted-foreground">{event.description}</p>
+            )}
+          </li>
+        ),
+      )}
     </ol>
   ),
 });

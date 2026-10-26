@@ -1,5 +1,6 @@
 import { type } from "arktype";
 import { cn } from "@/lib/utils";
+import { withContentKeys } from "../content-keys";
 import { defineGenComponent } from "../define";
 
 export default defineGenComponent({
@@ -36,26 +37,28 @@ export default defineGenComponent({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => (
-            <tr key={i} className="border-t">
-              {columns.map((column) => {
-                const value = row[column.key];
-                return (
-                  <td
-                    key={column.key}
-                    className={cn(
-                      "px-3 py-2",
-                      column.align === "right" || typeof value === "number"
-                        ? "text-right tabular-nums"
-                        : "text-left",
-                    )}
-                  >
-                    {typeof value === "number" ? value.toLocaleString() : (value ?? "—")}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+          {withContentKeys(rows, (row) => JSON.stringify(columns.map((c) => row[c.key]))).map(
+            ({ key, item: row }) => (
+              <tr key={key} className="border-t">
+                {columns.map((column) => {
+                  const value = row[column.key];
+                  return (
+                    <td
+                      key={column.key}
+                      className={cn(
+                        "px-3 py-2",
+                        column.align === "right" || typeof value === "number"
+                          ? "text-right tabular-nums"
+                          : "text-left",
+                      )}
+                    >
+                      {typeof value === "number" ? value.toLocaleString() : (value ?? "—")}
+                    </td>
+                  );
+                })}
+              </tr>
+            ),
+          )}
         </tbody>
       </table>
     </div>

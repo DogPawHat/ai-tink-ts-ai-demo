@@ -1,6 +1,7 @@
 import { type } from "arktype";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { withContentKeys } from "../content-keys";
 import { defineGenComponent } from "../define";
 
 export default defineGenComponent({
@@ -20,8 +21,8 @@ export default defineGenComponent({
   }),
   render: ({ cards }) => (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3">
-      {cards.map((card, i) => (
-        <Card key={i} size="sm">
+      {withContentKeys(cards, (card) => card.title).map(({ key, item: card }) => (
+        <Card key={key} size="sm">
           <CardHeader>
             <CardTitle>
               {card.href?.startsWith("https://") ? (
