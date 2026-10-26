@@ -141,7 +141,9 @@ export function Widget({ host, sprite, token }: WidgetConfig) {
 
   return (
     <div className={`root${inline ? " inline" : ""}`}>
-      <div className="panel" role="dialog" aria-label="Site agent">
+      {/* Non-modal: the open attribute shows it without show()'s focus move, so the
+          page keeps focus when the widget loads. */}
+      <dialog open className="panel" aria-label="Site agent">
         <div className="header">
           <span className={`dot${isLoading ? " busy" : ""}`} />
           <span className="title">Site agent</span>
@@ -179,6 +181,7 @@ export function Widget({ host, sprite, token }: WidgetConfig) {
             rows={1}
             value={draft}
             placeholder="What should change?"
+            aria-label="Message the site agent"
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -197,7 +200,7 @@ export function Widget({ host, sprite, token }: WidgetConfig) {
             </button>
           )}
         </div>
-      </div>
+      </dialog>
     </div>
   );
 }

@@ -56,6 +56,11 @@
   height: 24px;
 }
 .panel {
+  /* Undo the browser's dialog styles, which center it and add padding. */
+  position: static;
+  margin: 0;
+  padding: 0;
+  color: inherit;
   width: min(400px, calc(100vw - 32px));
   height: min(620px, calc(100vh - 32px));
   background: #fff;
