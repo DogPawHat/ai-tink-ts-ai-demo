@@ -1,0 +1,27 @@
+{
+  "name": "ai-sdk-hono",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./app": "./src/app.ts"
+  },
+  "scripts": {
+    "dev": "varlock run -- node --watch src/main.ts",
+    "start": "node src/main.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.5",
+    "@tanstack/ai": "^1.0.0",
+    "@tanstack/ai-anthropic": "^1.0.0",
+    "arktype": "^2.2.9",
+    "hono": "^4.13.14",
+    "varlock": "^1.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "~7.0.2",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

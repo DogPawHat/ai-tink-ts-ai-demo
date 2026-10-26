@@ -1,0 +1,48 @@
+{
+  "name": "ai-sdk-next",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3400",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 3400"
+  },
+  "dependencies": {
+    "@ag-ui/core": "^1.0.2",
+    "@ai-sdk/react": "^4.0.157",
+    "@radix-ui/react-use-controllable-state": "^1.3.0",
+    "@streamdown/cjk": "^1.0.4",
+    "@streamdown/code": "^2.0.0",
+    "@streamdown/math": "^1.0.3",
+    "@streamdown/mermaid": "^1.0.3",
+    "ai": "^7.0.153",
+    "class-variance-authority": "^0.7.1",
+    "cmdk": "^1.1.1",
+    "cn": "^0.5.0",
+    "lucide-react": "^1.61.0",
+    "motion": "^14.6.0",
+    "nanoid": "^6.0.2",
+    "next": "^16.4.3",
+    "radix-ui": "^1.8.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "shiki": "^4.5.0",
+    "streamdown": "^2.7.1",
+    "tw-animate-css": "^1.4.0",
+    "use-stick-to-bottom": "^1.1.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@tanstack/ai": "^1.0.0",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "ai-sdk-hono": "workspace:*",
+    "shadcn": "^4.22.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~7.0.2",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}
