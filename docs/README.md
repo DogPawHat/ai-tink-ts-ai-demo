@@ -14,7 +14,7 @@ Notes for coding agents working on this repository. Read these before changing a
 
 ## Status
 
-Last updated 2026-10-27. `apps/self-editing` (the site) and `apps/self-editing-host` (the Fly app) exist, and the first, owner-only version is deployed. `apps/pydantic-agui` is deployed as `ai-tink-pydantic`. `apps/generative-ui` (CopilotKit and TanStack AI, generative UI), `apps/ai-sdk-next` with `apps/ai-sdk-hono` (AI SDK client, TanStack AI server on Hono), and `apps/start-chat` (TanStack AI on both sides of one Start app) run locally and have Fly configs (`ai-tink-genui`, `ai-tink-ai-sdk`, `ai-tink-start-chat`), but are not deployed yet. Every demo is one Fly app, with its client and server together. Statements marked **unverified** have not been tested; check them before relying on them, and update these docs when you do.
+Last updated 2026-10-27. `apps/self-editing` (the site) and `apps/self-editing-host` (the Fly app) exist, and the first, owner-only version is deployed. `apps/pydantic-agui` is deployed as `ai-tink-pydantic`. `apps/generative-ui` (CopilotKit and TanStack AI, generative UI), `apps/ai-sdk-next` with `apps/ai-sdk-hono` (AI SDK client, TanStack AI server on Hono), and `apps/start-chat` (TanStack AI on both sides of one Start app) are deployed as `ai-tink-genui`, `ai-tink-ai-sdk`, and `ai-tink-start-chat` (2026-10-27), without their secrets yet. Every demo is one Fly app, with its client and server together. Statements marked **unverified** have not been tested; check them before relying on them, and update these docs when you do.
 
 ## Keeping these docs useful
 

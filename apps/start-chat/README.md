@@ -33,7 +33,7 @@ src/
 
 ## Deploy
 
-Configured for the Fly app `ai-tink-start-chat` (region `lhr`); **not deployed yet**. `src/serve.ts` is the production server: Start's build is a fetch handler with no static file serving, so [srvx](https://srvx.h3.dev/) serves `dist/client` in front of it, behind the gate in `src/server/access-gate.ts`. Run it locally with `vp build && node src/serve.ts` (port 8080). The server pays for every run, so with `ACCESS_KEY` set, a visit to `/?key=<ACCESS_KEY>` sets a cookie, and every path except `/health` needs it, the same gate as `apps/pydantic-agui`.
+Live at <https://ai-tink-start-chat.fly.dev/?key=<ACCESS_KEY>> (Fly app `ai-tink-start-chat`, org `personal`, region `lhr`), deployed 2026-10-27; secrets (`ANTHROPIC_API_KEY`, `ACCESS_KEY`) not set yet, so the gate is off and chats fail. `src/serve.ts` is the production server: Start's build is a fetch handler with no static file serving, so [srvx](https://srvx.h3.dev/) serves `dist/client` in front of it, behind the gate in `src/server/access-gate.ts`. Run it locally with `vp build && node src/serve.ts` (port 8080). The server pays for every run, so with `ACCESS_KEY` set, a visit to `/?key=<ACCESS_KEY>` sets a cookie, and every path except `/health` needs it, the same gate as `apps/pydantic-agui`.
 
 | Variable            | Where                | Purpose                                         |
 | ------------------- | -------------------- | ----------------------------------------------- |

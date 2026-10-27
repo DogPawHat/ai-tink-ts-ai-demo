@@ -1,6 +1,6 @@
 # Start chat demo
 
-Status: v1 built in `apps/start-chat` and checked against Claude (`claude-sonnet-5-5`) in a browser, 2026-10-27. Runs locally. Fly config for `ai-tink-start-chat` added 2026-10-27; not deployed. Statements marked **unverified** have not been tested.
+Status: v1 built in `apps/start-chat` and checked against Claude (`claude-sonnet-5-5`) in a browser, 2026-10-27. Runs locally. Deployed as `ai-tink-start-chat` on 2026-10-27, secrets not set yet. Statements marked **unverified** have not been tested.
 
 ## Goal
 
@@ -35,8 +35,8 @@ Checked live: "Search the web for the latest TanStack Router release and tell me
 - Tool approval (`needsApproval` and `useChat`'s `interrupts`).
 - Persistence: the thread id is fixed and messages are lost on reload.
 - Server functions (`createServerFn`) as the transport instead of a server route.
-- Deploying: Fly config is ready (see [Hosting](#hosting-2026-10-27)), but the app does not exist on Fly yet.
+- Production secrets (see [Hosting](#hosting-2026-10-27)).
 
 ## Hosting (2026-10-27)
 
-One Fly app, `ai-tink-start-chat` (`fly.toml` and `Dockerfile` in the app). Start's build is a fetch handler that serves no static files, so `src/serve.ts` wraps it in [srvx](https://srvx.h3.dev/) (already a dependency of Start's plugin) with `dist/client` as static files and the same access-key gate as `ai-tink-pydantic`, in `src/server/access-gate.ts`. Checked locally without Docker (there is none on this machine) by repeating the Dockerfile's steps in a scratch directory: the filtered install and build, then a `--prod` install with only the built files copied in. Behind `ACCESS_KEY=secret`, `/health` answered 200, `/` 401 without the cookie and 200 with it, and `/api/chat` reached the route (400 for an empty body). A run against Claude through the production server, and the image build on Fly, are **unverified**.
+One Fly app, `ai-tink-start-chat` (`fly.toml` and `Dockerfile` in the app). Start's build is a fetch handler that serves no static files, so `src/serve.ts` wraps it in [srvx](https://srvx.h3.dev/) (already a dependency of Start's plugin) with `dist/client` as static files and the same access-key gate as `ai-tink-pydantic`, in `src/server/access-gate.ts`. Checked locally without Docker (there is none on this machine) by repeating the Dockerfile's steps in a scratch directory: the filtered install and build, then a `--prod` install with only the built files copied in. Behind `ACCESS_KEY=secret`, `/health` answered 200, `/` 401 without the cookie and 200 with it, and `/api/chat` reached the route (400 for an empty body). Deployed 2026-10-27; on Fly, `/health`, the page, and the agent endpoint answered as they did locally, with the machine's health check passing. The secrets are not set yet, so a run against Claude in production is **unverified**.

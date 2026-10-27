@@ -28,7 +28,7 @@ vp run dev        # next dev on http://localhost:3400
 
 ## Deploy
 
-Configured for the Fly app `ai-tink-ai-sdk` (region `lhr`); **not deployed yet**. Both halves run in one Fly app, on one machine: `fly-start.sh` starts Hono on `127.0.0.1:8020`, where only Next.js can reach it, and `next start` on port 8080. If either process exits, the script stops the other, and Fly restarts the machine. The gate is `src/proxy.ts` (`src/lib/access-gate.ts`), which runs before the `/api/agent` rewrite, so it covers the agent too. The server pays for every run, so with `ACCESS_KEY` set, a visit to `/?key=<ACCESS_KEY>` sets a cookie, and every path except `/health` needs it, the same gate as `apps/pydantic-agui`.
+Live at <https://ai-tink-ai-sdk.fly.dev/?key=<ACCESS_KEY>> (Fly app `ai-tink-ai-sdk`, org `personal`, region `lhr`), deployed 2026-10-27; secrets (`ANTHROPIC_API_KEY`, `ACCESS_KEY`) not set yet, so the gate is off and chats fail. Both halves run in one Fly app, on one machine: `fly-start.sh` starts Hono on `127.0.0.1:8020`, where only Next.js can reach it, and `next start` on port 8080. If either process exits, the script stops the other, and Fly restarts the machine. The gate is `src/proxy.ts` (`src/lib/access-gate.ts`), which runs before the `/api/agent` rewrite, so it covers the agent too. The server pays for every run, so with `ACCESS_KEY` set, a visit to `/?key=<ACCESS_KEY>` sets a cookie, and every path except `/health` needs it, the same gate as `apps/pydantic-agui`.
 
 | Variable            | Where                | Purpose                                         |
 | ------------------- | -------------------- | ----------------------------------------------- |

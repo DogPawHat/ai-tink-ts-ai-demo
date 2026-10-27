@@ -1,6 +1,6 @@
 # AI SDK demo
 
-Status: v1 built in `apps/ai-sdk-next` (client) and `apps/ai-sdk-hono` (server), and checked against Claude (`claude-sonnet-5-5`) in a browser, 2026-10-26. Runs locally. Fly config for `ai-tink-ai-sdk` added 2026-10-27; not deployed. Statements marked **unverified** have not been tested.
+Status: v1 built in `apps/ai-sdk-next` (client) and `apps/ai-sdk-hono` (server), and checked against Claude (`claude-sonnet-5-5`) in a browser, 2026-10-26. Runs locally. Deployed as `ai-tink-ai-sdk` on 2026-10-27, secrets not set yet. Statements marked **unverified** have not been tested.
 
 ## Goal
 
@@ -74,7 +74,7 @@ Added 2026-10-27: Anthropic's own web search, with the middleware and `restoreWe
 
 **Decided (owner, 2026-10-27): each demo's client and server are grouped in one Fly app.** Fly has no grouping above an app other than the org. Within an app, process groups could run Next.js and Hono on separate machines, but Fly's proxy routes by port, not path, so the browser would still need Next.js to proxy to Hono over the private network. Instead, one machine runs both: `apps/ai-sdk-next/fly-start.sh` starts Hono on `127.0.0.1:8020` and `next start` on 8080, and exits (so Fly restarts the machine) if either does. The rewrite to Hono is the same one used in development. Mounting Hono inside a Next.js route handler was rejected: it would make the server stop being a separate app.
 
-The Fly app is `ai-tink-ai-sdk`, with `fly.toml` and `Dockerfile` in `apps/ai-sdk-next`. Next.js 16's `src/proxy.ts` holds the access-key gate (`src/lib/access-gate.ts`); it runs before rewrites, so it covers `/api/agent`. Hono isn't reachable from outside the machine, so it has no gate. Next.js rejects a relative `Location` from the proxy (`TypeError: Invalid URL`), so the gate redirects to an absolute URL, keeping `X-Forwarded-Proto` from Fly's proxy. Next.js turns it back into a relative one. Checked locally without Docker (there is none on this machine) by repeating the Dockerfile's steps in a scratch directory: the filtered install and build, then a `--prod` install with only the built files copied in. Behind `ACCESS_KEY=secret`, `/health` answered 200, `/` 401 without the cookie and 200 with it, and `/api/agent` reached Hono through the rewrite (400 for an empty body). Killing Hono stopped Next.js and the script. A run against Claude through the production server, and the image build on Fly, are **unverified**.
+The Fly app is `ai-tink-ai-sdk`, with `fly.toml` and `Dockerfile` in `apps/ai-sdk-next`. Next.js 16's `src/proxy.ts` holds the access-key gate (`src/lib/access-gate.ts`); it runs before rewrites, so it covers `/api/agent`. Hono isn't reachable from outside the machine, so it has no gate. Next.js rejects a relative `Location` from the proxy (`TypeError: Invalid URL`), so the gate redirects to an absolute URL, keeping `X-Forwarded-Proto` from Fly's proxy. Next.js turns it back into a relative one. Checked locally without Docker (there is none on this machine) by repeating the Dockerfile's steps in a scratch directory: the filtered install and build, then a `--prod` install with only the built files copied in. Behind `ACCESS_KEY=secret`, `/health` answered 200, `/` 401 without the cookie and 200 with it, and `/api/agent` reached Hono through the rewrite (400 for an empty body). Killing Hono stopped Next.js and the script. Deployed 2026-10-27; on Fly, `/health`, the page, and the agent endpoint answered as they did locally, with the machine's health check passing. The secrets are not set yet, so a run against Claude in production is **unverified**.
 
 ### `unified` types and pnpm hoisting
 
@@ -85,7 +85,7 @@ Found 2026-10-27: `next build` and `vp check` failed type checking in `message.t
 - Client-side tools and tool approval. The server already merges browser-declared tools (`mergeAgentTools`), but the transport sends `tools: []` and doesn't send back reasoning signatures, which Claude needs when a turn continues after a client tool result.
 - `reconnectToStream` returns `null`; there is no resumable stream.
 - Bundle size: AI Elements' `MessageResponse` loads Streamdown with its Mermaid, KaTeX, CJK, and code plugins.
-- Deploying: Fly config is ready (see [Hosting](#hosting-2026-10-27)), but the app does not exist on Fly yet.
+- Production secrets (see [Hosting](#hosting-2026-10-27)).
 
 ## Agent skills
 

@@ -1,6 +1,6 @@
 # Generative UI demo
 
-Status: v1 built in `apps/generative-ui` and checked against Claude (`claude-haiku-5-5`) in a browser, 2026-10-26. An upstream Vite 8 / Rolldown bug leaks a dev server per in-place restart; `vp run dev` works around it (see [Dev server memory leak](#dev-server-memory-leak)). Fly config added 2026-10-27; not deployed. Work happens on `feat/generative-ui` and lands as one PR once local v1 passes `vp check`, `vp test`, and a browser check. Statements marked **unverified** have not been tested.
+Status: v1 built in `apps/generative-ui` and checked against Claude (`claude-haiku-5-5`) in a browser, 2026-10-26. An upstream Vite 8 / Rolldown bug leaks a dev server per in-place restart; `vp run dev` works around it (see [Dev server memory leak](#dev-server-memory-leak)). Deployed as `ai-tink-genui` on 2026-10-27, secrets not set yet. Work happens on `feat/generative-ui` and lands as one PR once local v1 passes `vp check`, `vp test`, and a browser check. Statements marked **unverified** have not been tested.
 
 ## Goal
 
@@ -51,7 +51,7 @@ The agent has two ways to draw:
 
 1. **Spike** (first commit): Start app, `/api/copilotkit` with `BuiltInAgent` on Haiku, one registered component, Open Generative UI on. Check in a browser. Done.
 2. **v1**: the component set, chart, data tools, tests, starter prompts, docs. Done. The remaining dev-server leak is upstream.
-3. **Deploy** to Fly with the access-key gate: configured (see [Hosting](#hosting-2026-10-27)), not deployed.
+3. **Deploy** to Fly with the access-key gate: deployed 2026-10-27 (see [Hosting](#hosting-2026-10-27)); secrets not set yet.
 
 ## Spike findings (2026-10-26)
 
@@ -152,7 +152,7 @@ Checked live: a release-notes question searched three times, drew a `cardGrid`, 
 
 ## Hosting (2026-10-27)
 
-Built as planned: one Fly app, `ai-tink-genui`, gated by an access key. The production server is `src/serve.ts`, the same srvx wrapper as `apps/start-chat` (Start's build serves no static files). `COPILOTKIT_TELEMETRY_DISABLED` is set in `fly.toml`, since `.env.schema` is only read by Varlock in development. The machine has 1 GB, double the other apps, because of CopilotKit's runtime and a 4.7 MB server bundle. Memory use was not measured (**unverified**). Checked locally without Docker (there is none on this machine) by repeating the Dockerfile's steps in a scratch directory: the filtered install and build, then a `--prod` install with only the built files copied in. Behind `ACCESS_KEY=secret`, `/health` answered 200, `/` 401 without the cookie and 200 with it, and `/api/copilotkit/info` returned the runtime's agent list. A run against Claude through the production server, and the image build on Fly, are **unverified**.
+Built as planned: one Fly app, `ai-tink-genui`, gated by an access key. The production server is `src/serve.ts`, the same srvx wrapper as `apps/start-chat` (Start's build serves no static files). `COPILOTKIT_TELEMETRY_DISABLED` is set in `fly.toml`, since `.env.schema` is only read by Varlock in development. The machine has 1 GB, double the other apps, because of CopilotKit's runtime and a 4.7 MB server bundle. Memory use was not measured (**unverified**). Checked locally without Docker (there is none on this machine) by repeating the Dockerfile's steps in a scratch directory: the filtered install and build, then a `--prod` install with only the built files copied in. Behind `ACCESS_KEY=secret`, `/health` answered 200, `/` 401 without the cookie and 200 with it, and `/api/copilotkit/info` returned the runtime's agent list. Deployed 2026-10-27; on Fly, `/health`, the page, and the agent endpoint answered as they did locally, with the machine's health check passing. The secrets are not set yet, so a run against Claude in production is **unverified**.
 
 ## Later
 
