@@ -4,6 +4,7 @@ The agent behind [`apps/ai-sdk-next`](../ai-sdk-next): a [Hono](https://hono.dev
 
 - `src/app.ts`: `chatParamsFromRequestBody` → `chat()` → `toServerSentEventsResponse`. Tools the browser declares are merged in with `mergeAgentTools`.
 - `src/data-tools.ts`: `npmDownloads` and `githubRepo`, copied from `apps/generative-ui`. Public APIs, no keys.
+- `src/web-search.ts`: Anthropic's own web search, copied from `apps/generative-ui`, with a middleware that sends each result to the client and `restoreWebSearches`, which replays it from history. Billed per search.
 - `src/main.ts`: `@hono/node-server` on `127.0.0.1:8020`. Node runs the TypeScript directly (type stripping), so there is no build step.
 
 ## Run locally

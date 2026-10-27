@@ -18,6 +18,12 @@ The baseline the other demos vary from: a single TanStack Start app with TanStac
 | UI        | Plain Tailwind, the same look as `pydantic-agui`. No shadcn.                                                                                                                                                                                                       |
 | Dev       | `vp run dev` is `varlock run -- vp dev`. It doesn't use `generative-ui`'s restart-in-a-new-process script; that leak was found with CopilotKit's large dependency graph and has not been checked here (**unverified**).                                            |
 
+## Web search
+
+Added 2026-10-27: Anthropic's own web search, with `webSearchMiddleware` and `restoreWebSearches` copied from `apps/generative-ui` (see [generative-ui-demo.md](generative-ui-demo.md#web-search) for why they exist). The middleware sends each search's arguments and result, including the pages' encrypted text, to the browser; `restoreWebSearches` turns them back into Anthropic's search blocks when the history returns, as it does after every client tool. The page hides the encrypted `replay` field.
+
+Checked live: "Search the web for the latest TanStack Router release and tell me its version. Then make the page sky." searched once, ran `setAccent` in the browser, and the second request (history with the replayed search) answered from the release page it had read.
+
 ## What was checked (2026-10-27)
 
 - `vp build` succeeds. The client bundle has no `api.github.com` or Anthropic code: Start strips the server handler and its imports.

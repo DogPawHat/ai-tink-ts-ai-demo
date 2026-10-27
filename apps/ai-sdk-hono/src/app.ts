@@ -5,14 +5,17 @@ import {
   maxIterations,
   mergeAgentTools,
   toServerSentEventsResponse,
+  type ModelMessage,
 } from "@tanstack/ai";
 import { anthropicText, type AnthropicChatModel } from "@tanstack/ai-anthropic";
 import { dataTools } from "./data-tools.ts";
+import { restoreWebSearches, webSearch, webSearchMiddleware } from "./web-search.ts";
 
 export const AGENT_PATH = "/api/agent";
 
 const SYSTEM_PROMPT = `You are a concise assistant for questions about JavaScript libraries.
 Use npmDownloads and githubRepo for real numbers instead of guessing, and say where numbers came from.
+Use web_search for recent events or facts you aren't sure of, and name the sources you used.
 Answer in Markdown. Use tables to compare libraries.`;
 
 type ChatAdapter = Parameters<typeof chat>[0]["adapter"];
@@ -46,17 +49,18 @@ export function createApp(adapter: AdapterFactory = anthropicAdapter) {
 
     const stream = chat({
       adapter: adapter(),
-      messages: params.messages,
+      messages: restoreWebSearches(params.messages as ModelMessage[]),
       threadId: params.threadId,
       runId: params.runId,
       systemPrompts: [SYSTEM_PROMPT],
       // Tools the browser declares become stubs; the browser runs them and
       // sends the results back with the next request.
-      tools: mergeAgentTools(dataTools, params.tools),
+      tools: mergeAgentTools([...dataTools, webSearch], params.tools),
       abortController,
       agentLoopStrategy: maxIterations(6),
       // Low effort keeps Sonnet quick; the summary streams so the UI can show it.
       reasoning: { level: "low", summary: true },
+      middleware: [webSearchMiddleware()],
     });
 
     return toServerSentEventsResponse(stream, {

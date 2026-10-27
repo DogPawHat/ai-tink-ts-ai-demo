@@ -31,7 +31,7 @@ def parse_sse(body: str) -> list[dict]:
 
 @pytest.fixture
 def client() -> AsyncClient:
-    app = create_app(lambda: TestModel())
+    app = create_app(lambda: TestModel(), web_search=False)
     return AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
 
 
@@ -56,7 +56,7 @@ async def test_run_streams_ag_ui_events(client: AsyncClient) -> None:
 
 
 async def test_access_key_gates_everything_but_health() -> None:
-    app = create_app(lambda: TestModel(), access_key="secret")
+    app = create_app(lambda: TestModel(), access_key="secret", web_search=False)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="https://test") as client:
         assert (await client.get("/health")).status_code == 200
         assert (await client.post("/api/agent", json=run_input("hi"))).status_code == 401

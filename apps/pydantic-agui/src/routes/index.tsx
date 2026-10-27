@@ -113,9 +113,9 @@ function Message({ message }: { message: UIMessage }) {
               <p className="text-amber-300">
                 {part.name}({part.arguments})
               </p>
-              <p className="mt-1 text-slate-400">
+              <p className="mt-1 break-all text-slate-400">
                 {part.state === "complete" || part.output !== undefined
-                  ? `→ ${JSON.stringify(part.output)}`
+                  ? `→ ${JSON.stringify(part.output, withoutEncrypted)}`
                   : part.state}
               </p>
             </div>
@@ -125,4 +125,9 @@ function Message({ message }: { message: UIMessage }) {
       })}
     </div>
   );
+}
+
+/** Web search results carry the pages' encrypted text for the server to replay; it isn't worth showing. */
+function withoutEncrypted(key: string, value: unknown) {
+  return key.startsWith("encrypted_") ? undefined : value;
 }

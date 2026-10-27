@@ -3,7 +3,7 @@
 A TanStack AI React client (`@tanstack/ai-react`) talking to a [Pydantic AI](https://ai.pydantic.dev/) agent served by FastAPI. The two sides speak [AG-UI](https://docs.ag-ui.com/): the client POSTs a `RunAgentInput` and the server streams AG-UI events back as server-sent events. No TanStack code runs on the server.
 
 - **Frontend**: TanStack Start in SPA mode (`spa: { enabled: true }`), so the build is a static shell with no server runtime. It uses released TanStack AI packages, not the harness preview that `apps/self-editing` pins.
-- **Server** (`server/`): FastAPI app that hands each request to `AGUIAdapter.dispatch_request` from `pydantic_ai.ui.ag_ui`. The agent has two tools, `current_time` and `roll_dice`. Python dependencies are managed with `uv`.
+- **Server** (`server/`): FastAPI app that hands each request to `AGUIAdapter.dispatch_request` from `pydantic_ai.ui.ag_ui`. The agent has two tools, `current_time` and `roll_dice`, plus Anthropic's own web search (Pydantic AI's `WebSearch` capability, billed per search). Python dependencies are managed with `uv`.
 - **Model**: Claude (`claude-sonnet-5-5` by default) through the Anthropic API. The server reads `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`; `.env.schema` declares them for Varlock.
 
 ## Run locally

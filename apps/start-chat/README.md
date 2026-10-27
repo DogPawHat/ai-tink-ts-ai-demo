@@ -7,6 +7,8 @@ The point of a single app is that the tool definitions in `src/tools.ts` are imp
 - **`githubRepo`** runs on the server (`.server()` in `src/server/agent.ts`) and calls the GitHub API, which needs no key.
 - **`setAccent`** runs in the browser (`.client()` in `src/routes/index.tsx`) and changes the page's accent colour. The server passes the bare definition to `chat()`, so the model can call it; `useChat` runs it and sends the result back in the next request.
 
+The server also has Anthropic's own web search (`src/server/web-search.ts`, copied from `apps/generative-ui`). It runs inside Anthropic's API, needs no other key, and is billed per search.
+
 Reasoning summaries are on at low effort and render as a collapsible "Reasoning" block.
 
 ## Layout
@@ -15,6 +17,7 @@ Reasoning summaries are on at low effort and render as a collapsible "Reasoning"
 src/
   tools.ts             shared tool definitions (ArkType schemas)
   server/agent.ts      chat() handler, githubRepo implementation, system prompt
+  server/web-search.ts Anthropic web search, and replaying it from history
   routes/api/chat.ts   POST /api/chat server route
   routes/index.tsx     useChat page, setAccent implementation
   key-parts.ts         stable React keys for message parts

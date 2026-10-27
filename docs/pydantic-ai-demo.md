@@ -46,3 +46,9 @@ Not decided. Candidates that show something the other two do not:
 ## Credentials
 
 Locally, `apps/pydantic-agui/.env.local` (git-ignored, Varlock-encrypted) needs `ANTHROPIC_API_KEY`; the old copy holds only the OpenCode key, so add the Anthropic key to it. The `linux-tpm` encryption key is machine-wide. On Fly, the key is the `ANTHROPIC_API_KEY` secret. Decryption needs the `tss` group (see [development.md](development.md)): `sg tss -c 'vp run dev:server'`.
+
+## Web search
+
+Added 2026-10-27: Anthropic's own web search, through Pydantic AI's `WebSearch` capability (`max_uses=5`). It is passed per run in `dispatch_request(capabilities=…)` rather than on the `Agent`, because `TestModel` raises on any provider-run tool; `create_app(web_search=False)` turns it off in tests. Pydantic AI's AG-UI adapter already sends provider-run calls to the client (ids prefixed `pyd_ai_builtin|`) and rebuilds them from history, so no replay code was needed. The client hides fields named `encrypted_*` in tool cards.
+
+Found live: Pydantic AI uses Anthropic's newer search, which Claude can also call from code execution. The first attempt ran a `code_execution` call that failed on the result's shape, then the model searched directly. A follow-up asked, without searching again, for the URL it used; it answered from the replayed results and corrected its earlier version from another result in the same search.

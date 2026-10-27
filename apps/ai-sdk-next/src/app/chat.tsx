@@ -128,7 +128,7 @@ function ChatMessage({ message }: { message: UIMessage }) {
                   <ToolHeader type={part.type} state={part.state} toolName={part.toolName} />
                   <ToolContent>
                     <ToolInput input={part.input} />
-                    <ToolOutput output={part.output} errorText={part.errorText} />
+                    <ToolOutput output={withoutReplay(part.output)} errorText={part.errorText} />
                   </ToolContent>
                 </Tool>
               );
@@ -139,4 +139,11 @@ function ChatMessage({ message }: { message: UIMessage }) {
       </MessageContent>
     </Message>
   );
+}
+
+/** Web search results carry the pages' encrypted text for the server to replay; it isn't worth showing. */
+function withoutReplay(output: unknown) {
+  if (!output || typeof output !== "object" || !("replay" in output)) return output;
+  const { replay: _replay, ...rest } = output;
+  return rest;
 }

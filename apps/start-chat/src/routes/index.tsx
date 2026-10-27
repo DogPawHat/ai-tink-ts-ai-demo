@@ -152,7 +152,7 @@ function Message({ message, bubble }: { message: UIMessage; bubble: string }) {
               </p>
               <p className="mt-1 break-all text-slate-400">
                 {part.state === "complete" || part.output !== undefined
-                  ? `→ ${JSON.stringify(part.output)}`
+                  ? `→ ${JSON.stringify(withoutReplay(part.output))}`
                   : part.state}
               </p>
             </div>
@@ -162,4 +162,11 @@ function Message({ message, bubble }: { message: UIMessage; bubble: string }) {
       })}
     </div>
   );
+}
+
+/** Web search results carry the pages' encrypted text for the server to replay; it isn't worth showing. */
+function withoutReplay(output: unknown) {
+  if (!output || typeof output !== "object" || !("replay" in output)) return output;
+  const { replay: _replay, ...rest } = output;
+  return rest;
 }

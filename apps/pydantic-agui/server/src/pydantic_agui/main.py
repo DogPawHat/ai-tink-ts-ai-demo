@@ -5,6 +5,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from fastapi import FastAPI, Request
+from pydantic_ai.capabilities import WebSearch
 from pydantic_ai.models import Model
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 from starlette.responses import FileResponse, PlainTextResponse, RedirectResponse, Response
@@ -19,14 +20,22 @@ def create_app(
     model_factory: Callable[[], Model] = anthropic_model,
     access_key: str | None = None,
     static_dir: Path | None = None,
+    web_search: bool = True,
 ) -> FastAPI:
     """The AG-UI endpoint at /api/agent, plus the built client when `static_dir` is set.
 
     With an `access_key`, a visit to `/?key=<access_key>` sets a cookie, and every
     other path except /health needs that cookie. The server pays for each run, so
     the deployed app sets one.
+
+    `web_search` adds Anthropic's own web search, which runs inside Anthropic's
+    API, needs no other key, and is billed per search. Pydantic AI's AG-UI
+    adapter sends each search to the client and reads it back from the history,
+    so later runs see what was read. Tests turn it off: `TestModel` doesn't
+    support provider-run tools.
     """
     app = FastAPI(title="Pydantic AI over AG-UI")
+    capabilities = [WebSearch(max_uses=5)] if web_search else []
     cookie_value = hashlib.sha256(f"access:{access_key}".encode()).hexdigest() if access_key else ""
 
     @app.middleware("http")
@@ -50,7 +59,9 @@ def create_app(
 
     @app.post("/api/agent")
     async def run_agent(request: Request) -> Response:
-        return await AGUIAdapter.dispatch_request(request, agent=agent, model=model_factory())
+        return await AGUIAdapter.dispatch_request(
+            request, agent=agent, model=model_factory(), capabilities=capabilities
+        )
 
     if static_dir is not None:
         # The client is a SPA build: hashed assets plus one shell page for every route.

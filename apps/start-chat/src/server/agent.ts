@@ -3,12 +3,15 @@ import {
   chatParamsFromRequestBody,
   maxIterations,
   toServerSentEventsResponse,
+  type ModelMessage,
 } from "@tanstack/ai";
 import { anthropicText, type AnthropicChatModel } from "@tanstack/ai-anthropic";
 import { githubRepoDef, setAccentDef } from "../tools";
+import { restoreWebSearches, webSearch, webSearchMiddleware } from "./web-search";
 
 const SYSTEM_PROMPT = `You are a concise assistant in a demo chat built with TanStack Start and TanStack AI.
 Use githubRepo for real numbers about GitHub repositories instead of guessing.
+Use web_search for recent events or facts you aren't sure of, and name the sources you used.
 When the user asks to change how the page looks, use setAccent.
 Answer in plain text: the page does not render Markdown.`;
 
@@ -67,18 +70,19 @@ export async function handleChat(request: Request, adapter: AdapterFactory = ant
 
   const stream = chat({
     adapter: adapter(),
-    messages: params.messages,
+    messages: restoreWebSearches(params.messages as ModelMessage[]),
     threadId: params.threadId,
     runId: params.runId,
     systemPrompts: [SYSTEM_PROMPT],
     // The server knows every tool, so it doesn't need the browser's
     // declarations. setAccent has no server implementation: the stream asks
     // the browser to run it, and useChat sends the result back.
-    tools: [githubRepo, setAccentDef],
+    tools: [githubRepo, setAccentDef, webSearch],
     abortController,
     agentLoopStrategy: maxIterations(6),
     // Low effort keeps Sonnet quick; the summary streams so the UI can show it.
     reasoning: { level: "low", summary: true },
+    middleware: [webSearchMiddleware()],
   });
 
   return toServerSentEventsResponse(stream, { abortController });

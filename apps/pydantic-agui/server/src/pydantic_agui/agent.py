@@ -11,7 +11,8 @@ DEFAULT_MODEL = "claude-sonnet-5-5"
 INSTRUCTIONS = """\
 You are a concise assistant in a demo of TanStack AI clients talking to a
 Pydantic AI backend over AG-UI. Use your tools when they help, and say which
-tool you used.
+tool you used. Use web search for recent events or facts you aren't sure of,
+and name the sources you used.
 """
 
 

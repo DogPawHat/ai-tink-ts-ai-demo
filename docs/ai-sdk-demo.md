@@ -46,15 +46,15 @@ Findings that shaped it (from TanStack AI 1.0.0's actual stream, captured with `
 
 ## Decisions
 
-| Area        | Decision                                                                                                                                                                                            |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Packages    | Two workspace packages, `apps/ai-sdk-next` (port 3400) and `apps/ai-sdk-hono` (port 8020), like `self-editing` and `self-editing-host`.                                                             |
-| Client      | Next.js 16 (Turbopack), AI SDK 7 (`ai`, `@ai-sdk/react` 4), shadcn with Radix and the Nova preset (AI Elements is built on Radix), dark mode from `prefers-color-scheme`.                           |
-| AI Elements | `conversation`, `message` (Streamdown Markdown), `prompt-input`, `reasoning`, `tool`, `suggestion`, `shimmer`, added with `shadcn add @ai-elements/<name>`. Vendored, and edited only to pass lint. |
-| Server      | Hono 4 on `@hono/node-server`. Node 24 runs the TypeScript directly (relative imports end in `.ts`), so there is no build step.                                                                     |
-| Agent       | `claude-sonnet-5-5`, low reasoning effort with summaries on, `maxIterations(6)`, the `npmDownloads` and `githubRepo` tools copied from `generative-ui` (not shared, as elsewhere in the repo).      |
-| Toolchain   | `vp check` lints, formats, and type checks both apps; `vp test` runs Vitest. Next.js builds with `vp run build` (`next build`), not `vp build`.                                                     |
-| Tests       | Transport tests run the real Hono app in-process (the Next app has `ai-sdk-hono` as a dev dependency) with `fakeText`, and read the result with the AI SDK's `readUIMessageStream`.                 |
+| Area        | Decision                                                                                                                                                                                                                |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Packages    | Two workspace packages, `apps/ai-sdk-next` (port 3400) and `apps/ai-sdk-hono` (port 8020), like `self-editing` and `self-editing-host`.                                                                                 |
+| Client      | Next.js 16 (Turbopack), AI SDK 7 (`ai`, `@ai-sdk/react` 4), shadcn with Radix and the Nova preset (AI Elements is built on Radix), dark mode from `prefers-color-scheme`.                                               |
+| AI Elements | `conversation`, `message` (Streamdown Markdown), `prompt-input`, `reasoning`, `tool`, `suggestion`, `shimmer`, added with `shadcn add @ai-elements/<name>`. Vendored, and edited only to pass lint.                     |
+| Server      | Hono 4 on `@hono/node-server`. Node 24 runs the TypeScript directly (relative imports end in `.ts`), so there is no build step.                                                                                         |
+| Agent       | `claude-sonnet-5-5`, low reasoning effort with summaries on, `maxIterations(6)`, the `npmDownloads` and `githubRepo` tools and Anthropic web search copied from `generative-ui` (not shared, as elsewhere in the repo). |
+| Toolchain   | `vp check` lints, formats, and type checks both apps; `vp test` runs Vitest. Next.js builds with `vp run build` (`next build`), not `vp build`.                                                                         |
+| Tests       | Transport tests run the real Hono app in-process (the Next app has `ai-sdk-hono` as a dev dependency) with `fakeText`, and read the result with the AI SDK's `readUIMessageStream`.                                     |
 
 ## What was checked (2026-10-26)
 
@@ -65,6 +65,10 @@ In a browser against `claude-sonnet-5-5`:
 - Stop during a run, then a new message: the chat recovered and answered.
 
 Not seen live: reasoning. At low effort Sonnet didn't think on these prompts, so the `Reasoning` component is covered only by the transport test (`fakeText` thinking).
+
+## Web search
+
+Added 2026-10-27: Anthropic's own web search, with the middleware and `restoreWebSearches` from `generative-ui`. The transport already sends a tool result back as the JSON it received, so the replay needed no client change; the chat only hides the encrypted `replay` field in the tool card. Checked live: a search for the latest TanStack Query release, then a follow-up asking, without searching again, what the GitHub releases page said. The answer quoted details from the page (commit and package versions), so the replayed search reached Claude.
 
 ## Not yet done
 
