@@ -1,0 +1,14 @@
+import { defineConfig } from "vite-plus";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig({
+  plugins: [tanstackStart(), viteReact(), tailwindcss()],
+  server: {
+    host: "127.0.0.1",
+    port: 3500,
+    strictPort: true,
+    allowedHosts: ["dogpawbot.taildd39d.ts.net"],
+  },
+});

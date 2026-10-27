@@ -10,10 +10,11 @@ Notes for coding agents working on this repository. Read these before changing a
 | [pydantic-ai-demo.md](pydantic-ai-demo.md)                   | The demo of TanStack AI clients talking to a Pydantic AI backend (`apps/pydantic-agui`)                             |
 | [generative-ui-demo.md](generative-ui-demo.md)               | A CopilotKit client with generative UI on a TanStack AI server (`apps/generative-ui`)                               |
 | [ai-sdk-demo.md](ai-sdk-demo.md)                             | A Next.js, AI SDK, and AI Elements client on a Hono and TanStack AI server (`apps/ai-sdk-next`, `apps/ai-sdk-hono`) |
+| [start-chat-demo.md](start-chat-demo.md)                     | One TanStack Start app with TanStack AI on both sides (`apps/start-chat`)                                           |
 
 ## Status
 
-Last updated 2026-10-26. `apps/self-editing` (the site) and `apps/self-editing-host` (the Fly app) exist, and the first, owner-only version is deployed. `apps/pydantic-agui` is deployed as `ai-tink-pydantic`. `apps/generative-ui` (CopilotKit and TanStack AI, generative UI) is built and runs locally; it is not deployed. `apps/ai-sdk-next` and `apps/ai-sdk-hono` (AI SDK client, TanStack AI server on Hono) are built and run locally; not deployed. Statements marked **unverified** have not been tested; check them before relying on them, and update these docs when you do.
+Last updated 2026-10-27. `apps/self-editing` (the site) and `apps/self-editing-host` (the Fly app) exist, and the first, owner-only version is deployed. `apps/pydantic-agui` is deployed as `ai-tink-pydantic`. `apps/generative-ui` (CopilotKit and TanStack AI, generative UI) is built and runs locally; it is not deployed. `apps/ai-sdk-next` and `apps/ai-sdk-hono` (AI SDK client, TanStack AI server on Hono) are built and run locally; not deployed. `apps/start-chat` (TanStack AI on both sides of one Start app) is built and runs locally; not deployed. Statements marked **unverified** have not been tested; check them before relying on them, and update these docs when you do.
 
 ## Keeping these docs useful
 
