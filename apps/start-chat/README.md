@@ -31,6 +31,25 @@ src/
 
 `ANTHROPIC_MODEL` defaults to `claude-sonnet-5-5`.
 
+## Deploy
+
+Configured for the Fly app `ai-tink-start-chat` (region `lhr`); **not deployed yet**. `src/serve.ts` is the production server: Start's build is a fetch handler with no static file serving, so [srvx](https://srvx.h3.dev/) serves `dist/client` in front of it, behind the gate in `src/server/access-gate.ts`. Run it locally with `vp build && node src/serve.ts` (port 8080). The server pays for every run, so with `ACCESS_KEY` set, a visit to `/?key=<ACCESS_KEY>` sets a cookie, and every path except `/health` needs it, the same gate as `apps/pydantic-agui`.
+
+| Variable            | Where                | Purpose                                         |
+| ------------------- | -------------------- | ----------------------------------------------- |
+| `ANTHROPIC_API_KEY` | secret               | Anthropic API key                               |
+| `ACCESS_KEY`        | secret               | Shared key for the page and the agent           |
+| `ANTHROPIC_MODEL`   | `fly.toml`, optional | Anthropic model id, default `claude-sonnet-5-5` |
+
+```sh
+# once:
+fly apps create ai-tink-start-chat --org personal
+fly secrets set ANTHROPIC_API_KEY=... ACCESS_KEY=... --app ai-tink-start-chat --stage
+# from the repository root:
+fly deploy . --config apps/start-chat/fly.toml \
+  --dockerfile apps/start-chat/Dockerfile --remote-only --ha=false
+```
+
 ## Checks
 
 `vp check` at the root lints, formats, and type checks. `vp -C apps/start-chat test` runs the route tests, which use `fakeText` from `@tanstack/ai/testing` and need no key.

@@ -10,7 +10,7 @@ Host the self-editing demo publicly instead of on a developer machine, with each
 
 - **Self-editing site**: one [Fly.io Sprite](https://docs.fly.io/sprites) per visitor.
 - **Agent host**: a normal Fly app running the harness and holding the model API key.
-- **Other demos**, including the Pydantic AI backend: normal Fly apps.
+- **Other demos**, including the Pydantic AI backend: normal Fly apps, one per demo with its client and server together (`ai-tink-pydantic` is deployed; `ai-tink-genui`, `ai-tink-ai-sdk`, and `ai-tink-start-chat` are configured).
 
 Reasons:
 

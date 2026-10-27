@@ -49,6 +49,26 @@ Add a file to `src/genui/components/` that default-exports `defineGenComponent({
 
 Restarting in a new process works around a Vite 8 / Rolldown bug that keeps every in-place-restarted server alive (about 50 MB each here); it also lets Varlock pick up changed env values. Plain `vp dev` still leaks. See the docs for the cause and a minimal repro.
 
+## Deploy
+
+Configured for the Fly app `ai-tink-genui` (region `lhr`); **not deployed yet**. `src/serve.ts` is the production server: Start's build is a fetch handler with no static file serving, so [srvx](https://srvx.h3.dev/) serves `dist/client` in front of it, behind the gate in `src/server/access-gate.ts`. Run it locally with `vp build && node src/serve.ts` (port 8080). The server pays for every run, so with `ACCESS_KEY` set, a visit to `/?key=<ACCESS_KEY>` sets a cookie, and every path except `/health` needs it, the same gate as `apps/pydantic-agui`.
+
+| Variable                        | Where                | Purpose                                          |
+| ------------------------------- | -------------------- | ------------------------------------------------ |
+| `ANTHROPIC_API_KEY`             | secret               | Anthropic API key                                |
+| `ACCESS_KEY`                    | secret               | Shared key for the page and the agent            |
+| `ANTHROPIC_MODEL`               | `fly.toml`, optional | Anthropic model id, default `claude-sonnet-5-5`  |
+| `COPILOTKIT_TELEMETRY_DISABLED` | `fly.toml`           | `true`; `.env.schema` isn't loaded in production |
+
+```sh
+# once:
+fly apps create ai-tink-genui --org personal
+fly secrets set ANTHROPIC_API_KEY=... ACCESS_KEY=... --app ai-tink-genui --stage
+# from the repository root:
+fly deploy . --config apps/generative-ui/fly.toml \
+  --dockerfile apps/generative-ui/Dockerfile --remote-only --ha=false
+```
+
 ## Validation
 
 ```sh

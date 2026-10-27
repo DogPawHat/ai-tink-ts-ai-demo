@@ -15,3 +15,10 @@ peerDependencyRules:
     - vite
   allowedVersions:
     vite: "*"
+# @streamdown/cjk imports unified's types but only lists it as a peer, which
+# pnpm doesn't link beside it, so TypeScript found whichever unified was
+# hoisted (CopilotKit's 10, not 11).
+packageExtensions:
+  "@streamdown/cjk":
+    dependencies:
+      unified: ^11.0.5

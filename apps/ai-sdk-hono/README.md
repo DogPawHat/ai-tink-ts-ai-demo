@@ -23,6 +23,10 @@ The agent behind [`apps/ai-sdk-next`](../ai-sdk-next): a [Hono](https://hono.dev
 | `ANTHROPIC_MODEL`   | Anthropic model id, default `claude-sonnet-5-5` |
 | `PORT`, `HOST`      | Listen address, default `127.0.0.1:8020`        |
 
+## Deploy
+
+Deployed together with the client, in the `ai-tink-ai-sdk` Fly app; see [`apps/ai-sdk-next`](../ai-sdk-next/README.md#deploy). It listens only on `127.0.0.1` there, so the client's access gate covers it.
+
 ## Validation
 
 ```sh

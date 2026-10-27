@@ -17,6 +17,7 @@
     "arktype": "^2.2.9",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "srvx": "^1.0.6",
     "varlock": "^1.23.0"
   },
   "devDependencies": {

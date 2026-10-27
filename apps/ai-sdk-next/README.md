@@ -26,6 +26,25 @@ vp run dev        # next dev on http://localhost:3400
 
 `vp dev` would start Vite, not Next.js; use `vp run dev`, `vp run build`, and `vp run start`. `/api/agent` is rewritten to `AGENT_URL` (default `http://127.0.0.1:8020`), so the browser never talks to the server directly: no CORS, and no key in the browser.
 
+## Deploy
+
+Configured for the Fly app `ai-tink-ai-sdk` (region `lhr`); **not deployed yet**. Both halves run in one Fly app, on one machine: `fly-start.sh` starts Hono on `127.0.0.1:8020`, where only Next.js can reach it, and `next start` on port 8080. If either process exits, the script stops the other, and Fly restarts the machine. The gate is `src/proxy.ts` (`src/lib/access-gate.ts`), which runs before the `/api/agent` rewrite, so it covers the agent too. The server pays for every run, so with `ACCESS_KEY` set, a visit to `/?key=<ACCESS_KEY>` sets a cookie, and every path except `/health` needs it, the same gate as `apps/pydantic-agui`.
+
+| Variable            | Where                | Purpose                                         |
+| ------------------- | -------------------- | ----------------------------------------------- |
+| `ANTHROPIC_API_KEY` | secret               | Anthropic API key                               |
+| `ACCESS_KEY`        | secret               | Shared key for the page and the agent           |
+| `ANTHROPIC_MODEL`   | `fly.toml`, optional | Anthropic model id, default `claude-sonnet-5-5` |
+
+```sh
+# once:
+fly apps create ai-tink-ai-sdk --org personal
+fly secrets set ANTHROPIC_API_KEY=... ACCESS_KEY=... --app ai-tink-ai-sdk --stage
+# from the repository root:
+fly deploy . --config apps/ai-sdk-next/fly.toml \
+  --dockerfile apps/ai-sdk-next/Dockerfile --remote-only --ha=false
+```
+
 ## Adding AI Elements
 
 ```sh
