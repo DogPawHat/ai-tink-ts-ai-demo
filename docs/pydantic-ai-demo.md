@@ -1,6 +1,6 @@
 # Pydantic AI demo
 
-Status: first version built in `apps/pydantic-agui` (2026-10-13). Verified against the live Zen model (`deepseek-v4.1-flash`) through the Vite proxy and a browser: tool calls and the final answer stream to the client. On 2026-10-24 it moved to Claude (`claude-haiku-5-5`, Anthropic API) and was deployed as the Fly app `ai-tink-pydantic`, gated by an access key; see the app's README. A live run against Claude is **unverified** until `ANTHROPIC_API_KEY` is set on the app.
+Status: first version built in `apps/pydantic-agui` (2026-10-13). Verified against the live Zen model (`deepseek-v4.1-flash`) through the Vite proxy and a browser: tool calls and the final answer stream to the client. On 2026-10-24 it moved to Claude (`claude-haiku-5-5`, Anthropic API) and was deployed as the Fly app `ai-tink-pydantic`, gated by an access key; see the app's README. Redeployed 2026-10-28 with web search, Sonnet 5.5 at low effort, and the keyed message parts; `/health` answered 200 and `/` 401 without the cookie. A live run against Claude is **unverified** until `ANTHROPIC_API_KEY` is set on the app.
 
 ## Goal
 
