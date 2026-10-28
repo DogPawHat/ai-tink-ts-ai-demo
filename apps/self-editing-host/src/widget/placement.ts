@@ -30,13 +30,27 @@ export function placeWidget(element: HTMLElement): void {
   }
 }
 
-/** Places the widget now and again whenever the site adds, removes, or marks a slot. */
+/** How long after the page's load event to wait for a slot before floating. */
+const SLOT_GRACE_MS = 1500;
+
+/**
+ * Places the widget now and again whenever the site adds, removes, or marks a slot.
+ * The slot is only marked after the site hydrates, which happens after this script
+ * runs, so the widget stays hidden until a slot appears or the page has had time to
+ * hydrate. Without that it shows in the corner first, then jumps into the slot.
+ */
 export function keepPlaced(element: HTMLElement): void {
   let queued = false;
+  element.style.visibility = "hidden";
+  const reveal = () => element.style.removeProperty("visibility");
   const run = () => {
     queued = false;
     placeWidget(element);
+    if (mode === "inline") reveal();
   };
+  const revealLater = () => setTimeout(reveal, SLOT_GRACE_MS);
+  if (document.readyState === "complete") revealLater();
+  else window.addEventListener("load", revealLater, { once: true });
   new MutationObserver(() => {
     if (!queued) {
       queued = true;
@@ -48,5 +62,5 @@ export function keepPlaced(element: HTMLElement): void {
     attributes: true,
     attributeFilter: ["data-aitink-slot"],
   });
-  placeWidget(element);
+  run();
 }
